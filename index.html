@@ -1155,34 +1155,61 @@ function applyLoadedData(parsed){
   customRangeEnd = parsed.customRangeEnd || '';
 }
 async function loadTasks(){
+  const ind = document.getElementById('saveIndicator');
   try{
     const parsed = await apiGet('getData');
-    if(parsed && !parsed.error && Array.isArray(parsed.tasks) && parsed.tasks.length){
+    if(parsed && parsed.error){
+      throw new Error(parsed.error);
+    }
+    if(parsed && Array.isArray(parsed.tasks) && parsed.tasks.length){
       applyLoadedData(parsed);
+      ind.textContent='Loaded from database ✓';
+      setTimeout(()=>{ ind.textContent='Auto-saving enabled'; },2000);
       return;
     }
-  }catch(e){ console.error('loadTasks failed:', e); }
+    if(parsed && Array.isArray(parsed.tasks)){
+      // connected, but the database is empty — seed it now
+      seedData();
+      ind.textContent='Database empty — loaded sample data';
+      setTimeout(()=>{ ind.textContent='Auto-saving enabled'; },3000);
+      return;
+    }
+    throw new Error('Unexpected response: '+JSON.stringify(parsed).slice(0,200));
+  }catch(e){
+    const msg = e.message || String(e);
+    ind.textContent = 'Load failed: ' + msg + ' (showing sample data)';
+    ind.title = msg;
+    ind.style.color = 'var(--red)';
+    setTimeout(()=>{ ind.style.color=''; },8000);
+  }
   seedData();
 }
 let saveTimer=null;
 function saveTasks(){
   const ind = document.getElementById('saveIndicator');
   ind.textContent='Saving...';
+  ind.title='';
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async ()=>{
+    let errMsg = null;
     try{
       const data = buildSaveData();
       const result = await apiPost({action:'saveData', data});
       if(result && result.ok){
         ind.textContent='Saved ✓';
       } else {
-        ind.textContent='Save failed';
-        console.error('saveData error:', result);
+        errMsg = (result && result.error) ? result.error : ('Unexpected response: '+JSON.stringify(result).slice(0,200));
       }
       pushHistorySnapshot(); // throttled automatic backup
     }catch(e){
-      ind.textContent='Save failed';
-      console.error('saveTasks failed:', e);
+      errMsg = e.message || String(e);
+    }
+    if(errMsg){
+      ind.textContent = 'Save failed: ' + errMsg;
+      ind.title = errMsg;
+      ind.style.color = 'var(--red)';
+      setTimeout(()=>{ ind.style.color=''; ind.textContent='Auto-saving enabled'; },8000);
+      return;
     }
     setTimeout(()=>{ ind.textContent='Auto-saving enabled'; },1500);
   },400);
