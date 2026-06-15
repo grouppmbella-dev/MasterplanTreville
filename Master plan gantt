@@ -1,0 +1,2901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Master Plan – Project Schedule</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --navy:#15324b;
+    --l1:#16324f;
+    --l2:#2c5f8a;
+    --l3:#4a90b8;
+    --l4:#7fc1d6;
+    --l5:#cfeaf1;
+    --bg:#eef2f4;
+    --panel:#ffffff;
+    --border:#dbe3e8;
+    --text:#1f2d3a;
+    --muted:#7d8e9b;
+    --green:#2e9e5b;
+    --amber:#e08a2c;
+    --red:#e5484d;
+    --subrow-h: 22px;
+    --row-h: 44px;
+    --head-h: 42px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:'IBM Plex Sans','IBM Plex Sans Thai',sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    overflow:hidden;
+  }
+  /* ---------- Top bar ---------- */
+  .topbar{
+    background:var(--navy);
+    color:#fff;
+    padding:14px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    flex-shrink:0;
+  }
+  .topbar h1{
+    font-size:18px;
+    font-weight:700;
+    margin:0;
+    letter-spacing:.02em;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .topbar h1 .sub{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    font-weight:400;
+    color:#9fc2d6;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+  }
+  .topbar h1 .project-name-input{
+    font-family:inherit;
+    font-size:15px;
+    font-weight:700;
+    color:#fff;
+    background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.25);
+    border-radius:4px;
+    padding:3px 10px;
+    min-width:140px;
+    max-width:320px;
+  }
+  .topbar h1 .project-name-input::placeholder{color:rgba(255,255,255,.55);}
+  .topbar h1 .project-name-input:focus{outline:2px solid var(--l3);outline-offset:1px;background:#fff;color:var(--text);}
+  @media print{
+    .topbar h1 .project-name-input{
+      border:none;background:none;color:inherit;padding:0;font-size:16px;
+    }
+  }
+  .project-range{
+    display:flex;
+    gap:14px;
+    align-items:center;
+    font-size:11px;
+    color:#9fc2d6;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+  }
+  .project-range label{
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .project-range input[type=date]{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:#fff;
+    background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.25);
+    border-radius:4px;
+    padding:3px 6px;
+  }
+  .project-range input[type=date]:focus{outline:2px solid var(--l3);background:#fff;color:var(--text);}
+  .project-range input.out-of-range{
+    border-color:var(--red);
+    box-shadow:0 0 0 1px var(--red);
+  }
+  .stats{
+    display:flex;
+    gap:18px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:#cfe3ef;
+  }
+  .stats .stat b{
+    display:block;
+    font-size:17px;
+    color:#fff;
+    font-weight:600;
+  }
+  .stats .stat span{
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font-size:10px;
+    color:#8fb4cb;
+  }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+    padding:8px 16px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    flex-shrink:0;
+    font-size:13px;
+  }
+  .toolbar label{color:var(--muted);font-size:12px;}
+  .toolbar select, .toolbar input[type=text]{
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:5px 8px;
+    font-family:inherit;
+    font-size:13px;
+    background:#fff;
+  }
+  .toolbar input[type=text]{width:200px;}
+  .toolbar input[type=date]{
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:5px 6px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    background:#fff;
+  }
+  .btn{
+    border:1px solid var(--border);
+    background:#fff;
+    border-radius:4px;
+    padding:6px 12px;
+    font-size:13px;
+    cursor:pointer;
+    color:var(--text);
+    font-weight:500;
+    transition:background .12s, border-color .12s;
+  }
+  .btn:hover{background:#f1f6f8;border-color:#b9cdd9;}
+  .btn.primary{background:var(--l2);color:#fff;border-color:var(--l2);}
+  .btn.primary:hover{background:#24507a;}
+  .btn.ghost{color:var(--muted);}
+  .spacer{flex:1;}
+  .zoom-group{display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;align-items:center;}
+  .zoom-group button{
+    border:none;background:#fff;padding:6px 10px;cursor:pointer;font-size:13px;
+    border-right:1px solid var(--border);color:var(--text);
+  }
+  .zoom-group button:last-child{border-right:none;}
+  .zoom-group button:hover{background:#f1f6f8;}
+  .zoom-group button.active{background:var(--l2);color:#fff;}
+  .zoom-group .lbl{padding:0 8px;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+  .save-indicator{font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- View tabs (Plan/Gantt vs Dashboard) ---------- */
+  .view-tabs{display:flex;gap:4px;background:rgba(255,255,255,.08);border-radius:6px;padding:3px;}
+  .view-tab{
+    border:none;background:none;color:#cfe3ef;padding:6px 14px;border-radius:4px;
+    cursor:pointer;font-size:12px;font-weight:600;letter-spacing:.02em;
+  }
+  .view-tab.active{background:#fff;color:var(--navy);}
+  .view-tab:hover:not(.active){background:rgba(255,255,255,.12);}
+
+  /* ---------- Role badge + read-only mode ---------- */
+  .role-badge{
+    font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+    padding:4px 10px;border-radius:4px;background:#eef2f4;color:var(--muted);
+  }
+  .role-badge.role-manager{background:#e3f0e8;color:#2e7d4f;}
+  .role-badge.role-executive{background:#e6edf7;color:var(--navy);}
+  .role-badge.role-viewer{background:#f3f0e6;color:#8a6d1f;}
+  body.role-readonly input,
+  body.role-readonly select,
+  body.role-readonly textarea{
+    pointer-events:none;
+    background:transparent !important;
+  }
+  body.role-readonly .del-btn,
+  body.role-readonly td.code{ pointer-events:none; }
+  body.role-readonly #addBtn,
+  body.role-readonly #newName,
+  body.role-readonly #newLevel,
+  body.role-readonly td.actions,
+  body.role-readonly th[data-col="actions"],
+  body.role-readonly .col-resizer{display:none !important;}
+
+  /* ---------- Dashboard view ---------- */
+  #dashboardView{display:none;padding:20px;overflow:auto;flex:1;background:var(--panel);}
+  .dash-header{margin-bottom:16px;}
+  .dash-header h2{margin:0 0 4px;font-size:20px;color:var(--navy);}
+  .dash-sub{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);}
+  .dash-cards{display:flex;gap:14px;margin-bottom:20px;flex-wrap:wrap;}
+  .dash-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 22px;min-width:120px;text-align:center;}
+  .dash-card.warn{border-color:var(--red);background:#fff5f5;}
+  .dash-num{font-size:26px;font-weight:700;color:var(--navy);font-family:'IBM Plex Mono',monospace;}
+  .dash-card.warn .dash-num{color:var(--red);}
+  .dash-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:4px;}
+  .dash-section{background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;}
+  .dash-section h3{margin:0 0 12px;font-size:13px;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;}
+  .dash-progress{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .dash-progress-label{width:60px;font-size:12px;color:var(--muted);}
+  .dash-bar{flex:1;height:14px;background:#eef2f4;border-radius:7px;overflow:hidden;}
+  .dash-bar-fill{height:100%;}
+  .dash-bar-fill.plan{background:var(--l2);}
+  .dash-bar-fill.actual{background:var(--amber);}
+  .dash-progress-val{width:42px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+  .dash-empty{color:var(--muted);font-size:13px;padding:10px 0;}
+  .dash-table{width:100%;table-layout:auto;font-size:12px;border-collapse:collapse;}
+  .dash-table th{height:32px;text-align:left;background:#f3f6f8;color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;padding:0 8px;border:1px solid var(--border);}
+  .dash-table td{height:auto;padding:6px 8px;border:1px solid var(--border);vertical-align:top;}
+
+  /* ---------- Legend ---------- */
+  .legend{display:flex;gap:14px;align-items:center;font-size:11px;color:var(--muted);}
+  .legend .chip{display:flex;align-items:center;gap:5px;}
+  .legend .swatch{width:14px;height:10px;border-radius:2px;display:inline-block;}
+
+  /* ---------- Split layout ---------- */
+  .split{
+    flex:1;
+    display:flex;
+    overflow:hidden;
+  }
+  .pane{
+    overflow:auto;
+    position:relative;
+    background:var(--panel);
+  }
+  .wbs-pane{
+    flex:0 1 auto;
+    max-width:72%;
+    border-right:2px solid var(--border);
+  }
+  .gantt-pane{
+    flex:1 1 auto;
+    min-width:0;
+  }
+  .extra-pane{
+    flex:0 0 auto;
+    width:auto;
+    max-width:340px;
+    border-left:2px solid var(--border);
+  }
+
+  /* ---------- WBS Table ---------- */
+  table.wbs{
+    border-collapse:collapse;
+    font-size:12px;
+    table-layout:fixed;
+  }
+  table.wbs th, table.wbs td{
+    border:1px solid var(--border);
+    padding:0 6px;
+    height:var(--subrow-h);
+    overflow:hidden;
+    white-space:nowrap;
+    vertical-align:middle;
+  }
+  table.wbs thead th{
+    position:sticky;
+    top:0;
+    background:#f3f6f8;
+    color:var(--muted);
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    font-weight:600;
+    height:var(--head-h);
+    z-index:3;
+    text-align:left;
+  }
+  table.wbs td{
+    background:#fff;
+  }
+  table.wbs td input, table.wbs td select{
+    width:100%;
+    height:100%;
+    border:none;
+    background:transparent;
+    font-family:inherit;
+    font-size:12px;
+    color:var(--text);
+    padding:0;
+  }
+  table.wbs td input:focus, table.wbs td select:focus{outline:2px solid var(--l3);outline-offset:-1px;background:#fff;}
+  table.wbs td input[type=date]{font-family:'IBM Plex Mono',monospace;font-size:11px;}
+  td.detail-cell{position:relative;white-space:normal;vertical-align:top;padding:4px 6px;}
+  td.detail-cell input{font-weight:600;}
+  textarea.detail-input{
+    display:block;
+    width:100%;
+    border:none;
+    background:transparent;
+    font-family:inherit;
+    font-size:12px;
+    font-weight:600;
+    color:var(--text);
+    padding:0;
+    margin:0;
+    resize:none;
+    overflow:hidden;
+    white-space:pre-wrap;
+    word-break:break-word;
+    line-height:1.4;
+  }
+  textarea.detail-input:focus{outline:2px solid var(--l3);outline-offset:-1px;background:#fff;}
+  td.code{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    text-align:center;
+    color:#fff;
+    font-weight:600;
+    cursor:grab;
+  }
+  td.code.dragging{opacity:.4;}
+  tr.drag-over td{box-shadow:inset 0 2px 0 var(--red);}
+  td.calc{
+    font-family:'IBM Plex Mono',monospace;
+    text-align:center;
+    color:var(--muted);
+    background:#f8fafb;
+  }
+  td.pct{padding:0;}
+  .pct-wrap{position:relative;height:100%;display:flex;align-items:center;}
+  .pct-wrap input{
+    position:relative;z-index:1;text-align:right;padding-right:4px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .pct-bar{
+    position:absolute;left:0;top:0;bottom:0;background:#dff3e4;z-index:0;
+  }
+  td.actions{text-align:center;}
+  .del-btn{
+    border:none;background:none;color:var(--red);cursor:pointer;font-size:14px;
+    line-height:1;padding:0;
+  }
+  .del-btn:hover{color:#b3262b;}
+  tr.level-1 td.code{background:var(--l1);}
+  tr.level-2 td.code{background:var(--l2);}
+  tr.level-3 td.code{background:var(--l3);}
+  tr.level-4 td.code{background:var(--l4);color:var(--text);}
+  tr.level-5 td.code{background:var(--l5);color:var(--text);}
+  tr.level-1 td.detail-cell input{color:var(--l1);}
+  tr.level-2 td.detail-cell input{color:var(--l2);}
+  tr.level-1{font-weight:600;}
+  tr.level-1 td{background:#f5f9fb;}
+  tr.row-hidden{display:none;}
+
+  /* DETAIL background tint matches the No. column's level color */
+  tr.level-1 td.detail-cell{background:#dde6ee;}
+  tr.level-2 td.detail-cell{background:#e3ecf2;}
+  tr.level-3 td.detail-cell{background:#e9f1f5;}
+  tr.level-4 td.detail-cell{background:#eff7f9;}
+  tr.level-5 td.detail-cell{background:#f5fafc;}
+
+  /* No. cell: editable level number + computed WBS code */
+  td.code{padding:4px 2px;}
+  .level-input{
+    width:28px;
+    text-align:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    font-weight:700;
+    color:inherit;
+    background:rgba(255,255,255,.25);
+    border:none;
+    border-radius:3px;
+    -moz-appearance:textfield;
+  }
+  .level-input::-webkit-outer-spin-button, .level-input::-webkit-inner-spin-button{
+    -webkit-appearance:none; margin:0;
+  }
+  .level-input:focus{outline:2px solid #fff;outline-offset:1px;}
+  .wbs-code{
+    font-size:9.5px;
+    opacity:.85;
+    margin-top:2px;
+    letter-spacing:.03em;
+  }
+
+  /* ---------- Column resize handles ---------- */
+  table.wbs thead th{position:sticky;}
+  .col-resizer{
+    position:absolute;
+    top:0; right:0; bottom:0;
+    width:6px;
+    cursor:col-resize;
+    background:transparent;
+    z-index:4;
+  }
+  .col-resizer:hover, .col-resizer.resizing{background:var(--l3);opacity:.6;}
+
+  /* indentation for DETAIL column based on level */
+  tr.level-2 td.detail-cell{padding-left:10px;}
+  tr.level-3 td.detail-cell{padding-left:18px;}
+  tr.level-4 td.detail-cell{padding-left:26px;}
+  tr.level-5 td.detail-cell{padding-left:34px;}
+
+  /* Plan / Actual type badges + sub-row borders */
+  td.dtype{
+    text-align:center;
+    font-size:9.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:#fff;
+  }
+  td.dtype.plan{background:var(--l2);}
+  td.dtype.actual{background:var(--amber);}
+  tr[data-sub="1"] td.dtype, tr[data-sub="1"] td.datecell{border-bottom:1px dashed var(--border);}
+  td.pctcell{font-weight:600;}
+  td.pctcell[title*="Auto"]{color:var(--l2);}
+  td.pctcell[title*="Rolled"]{color:var(--navy);}
+  td.datecell.pct .pct-wrap input{color:var(--amber);font-weight:700;}
+
+  /* Status select color-coding */
+  select.status-select{cursor:pointer;font-size:11px;}
+  td.status-cell.status-notstarted{background:#eef2f4;}
+  td.status-cell.status-inprogress{background:#dbeefc;}
+  td.status-cell.status-completed{background:#dcfce7;}
+  td.status-cell.status-delayed{background:#fde2e2;}
+  td.status-cell.status-onhold{background:#fef3cd;}
+
+  /* ---------- Gantt ---------- */
+  .gantt-head{
+    position:sticky;
+    top:0;
+    height:var(--head-h);
+    background:#f3f6f8;
+    border-bottom:1px solid var(--border);
+    z-index:3;
+    display:flex;
+    flex-direction:column;
+  }
+  .gantt-months{
+    display:flex;
+    height:18px;
+    border-bottom:1px solid var(--border);
+    position:relative;
+  }
+  .gmonth{
+    position:absolute;
+    top:0;bottom:0;
+    display:flex;align-items:center;
+    padding-left:6px;
+    font-size:10.5px;
+    font-weight:600;
+    color:var(--navy);
+    border-left:1px solid var(--border);
+    font-family:'IBM Plex Mono',monospace;
+    letter-spacing:.06em;
+    white-space:nowrap;
+    overflow:hidden;
+  }
+  .gantt-days{
+    display:flex;
+    height:calc(var(--head-h) - 18px);
+    flex-shrink:0;
+  }
+  .gday-head{
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:10px;
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--muted);
+    border-right:1px solid #eef1f3;
+  }
+  .gday-head.weekend{background:#f7f9fa;}
+  .gday-head.today{background:#fde6e6;color:var(--red);font-weight:700;}
+
+  .gantt-body{
+    position:relative;
+  }
+  .gbg{
+    position:absolute;top:0;bottom:0;
+    border-right:1px solid #f0f3f5;
+  }
+  .gbg.weekend{background:rgba(0,0,0,.025);}
+  .gtoday-line{
+    position:absolute;top:0;bottom:0;
+    width:2px;background:var(--red);
+    z-index:2;
+  }
+  .grow{
+    position:absolute;left:0;right:0;
+    height:var(--row-h);
+    border-bottom:1px solid var(--border);
+  }
+  .grow:nth-child(odd){background:rgba(0,0,0,.012);}
+  .grow.row-hidden{display:none;}
+  .grow-mid{
+    position:absolute;left:0;right:0;
+    height:0;
+    border-top:1px dashed #e7edf1;
+  }
+
+  .gbar-plan{
+    position:absolute;
+    height:14px;
+    border-radius:3px;
+    overflow:hidden;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);
+    z-index:1;
+  }
+  .gbar-plan.row-hidden{display:none;}
+  .gbar-fill{
+    position:absolute;left:0;top:0;bottom:0;
+    background:rgba(46,158,91,.55);
+  }
+  .gbar-planmark{
+    position:absolute;top:-2px;bottom:-2px;width:2px;
+    background:var(--navy);
+    box-shadow:0 0 0 1px rgba(255,255,255,.7);
+    z-index:2;
+  }
+  .gbar-actual2{
+    position:absolute;
+    height:14px;
+    border-radius:3px;
+    background:var(--amber);
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);
+    z-index:1;
+    opacity:.92;
+  }
+  .gbar-actual2.ongoing{
+    background:repeating-linear-gradient(45deg, var(--amber), var(--amber) 6px, #f3c98a 6px, #f3c98a 12px);
+  }
+  .gbar-actual2.delayed{
+    background:var(--red);
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);
+  }
+  .gbar-actual2.delayed.ongoing{
+    background:repeating-linear-gradient(45deg, var(--red), var(--red) 6px, #f3a6a6 6px, #f3a6a6 12px);
+  }
+  .gbar-actual2.row-hidden{display:none;}
+  .gbar-label{
+    position:absolute;
+    font-size:10.5px;
+    color:var(--muted);
+    font-family:'IBM Plex Mono',monospace;
+    white-space:nowrap;
+    line-height:14px;
+  }
+  .gbar-label.delayed{color:var(--red);font-weight:600;}
+  .gbar-label.row-hidden{display:none;}
+  .level-1 .gbar-plan{background:var(--l1);}
+  .level-2 .gbar-plan{background:var(--l2);}
+  .level-3 .gbar-plan{background:var(--l3);}
+  .level-4 .gbar-plan{background:var(--l4);}
+  .level-5 .gbar-plan{background:var(--l5);}
+
+  /* scrollbar */
+  .pane::-webkit-scrollbar{height:10px;width:10px;}
+  .pane::-webkit-scrollbar-thumb{background:#c4d2da;border-radius:5px;}
+  .pane::-webkit-scrollbar-track{background:#eef2f4;}
+
+  /* ---------- Context menu (Excel-style right click) ---------- */
+  .ctx-menu{
+    position:fixed;
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:6px;
+    box-shadow:0 6px 20px rgba(0,0,0,.15);
+    z-index:100;
+    min-width:180px;
+    font-size:13px;
+    overflow:hidden;
+    display:none;
+  }
+  .ctx-menu button{
+    display:block;width:100%;text-align:left;
+    padding:8px 14px;border:none;background:none;cursor:pointer;
+    font-size:13px;color:var(--text);font-family:inherit;
+  }
+  .ctx-menu button:hover{background:#f1f6f8;}
+  .ctx-menu button.danger{color:var(--red);}
+  .ctx-menu hr{border:none;border-top:1px solid var(--border);margin:4px 0;}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(15,30,45,.45);
+    display:flex;align-items:center;justify-content:center;z-index:90;
+  }
+  .modal-overlay.hidden{display:none;}
+  .modal{
+    background:#fff;border-radius:10px;padding:22px;
+    max-width:560px;width:92%;max-height:85vh;overflow:auto;
+    box-shadow:0 12px 40px rgba(0,0,0,.25);
+  }
+  .modal h2{margin:0 0 4px;font-size:16px;color:var(--navy);}
+  .modal .modal-sub{font-size:12px;color:var(--muted);margin-bottom:16px;}
+  .modal h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 0 8px;}
+  .modal .field-row{margin-bottom:10px;display:flex;gap:8px;}
+  .modal .field-row input{flex:1;border:1px solid var(--border);border-radius:4px;padding:6px 8px;font-family:inherit;font-size:13px;}
+  .modal label.opt{
+    display:flex;align-items:center;gap:6px;font-size:13px;padding:4px 0;cursor:pointer;
+  }
+  .modal .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;}
+  .modal .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;}
+  .modal .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;flex-wrap:wrap;}
+  .custom-col-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid var(--border);}
+  .custom-col-row button{border:none;background:none;color:var(--red);cursor:pointer;font-size:14px;}
+  .custom-col-row .move-btn{
+    border:1px solid var(--border);background:#fff;color:var(--text);
+    border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;margin-left:4px;
+  }
+  .custom-col-row .move-btn:hover{background:#f1f6f8;}
+  .custom-col-row .move-btn:disabled{opacity:.3;cursor:default;}
+  .scale-radio{display:flex;gap:16px;}
+  .scale-radio label{display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;}
+
+  /* column hidden from the on-screen view (independent of print) */
+  @media screen{
+    .col-hide{display:none !important;}
+  }
+
+  /* ---------- Print ---------- */
+  @page{
+    size: A4 landscape;
+    margin: 8mm;
+  }
+  @media print{
+    *{
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+    .topbar,.toolbar,.modal-overlay,.ctx-menu,.project-range{display:none !important;}
+    body{overflow:visible;height:auto;}
+    .split{height:auto;overflow:visible;display:flex;flex-wrap:nowrap;align-items:flex-start;}
+    .pane{overflow:visible;height:auto;}
+    .wbs-pane{border-right:none;max-width:none;flex:0 0 auto;}
+    .gantt-pane{flex:0 0 auto;min-width:0;}
+    .extra-pane{flex:0 0 auto;max-width:none;}
+    .print-hide{display:none !important;}
+    #dashboardView{display:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Master Plan
+    <input type="text" id="projectNameInput" class="project-name-input" placeholder="Project name...">
+    <span class="sub">Project Schedule &amp; Gantt</span>
+  </h1>
+  <div class="view-tabs" id="viewTabs">
+    <button class="view-tab active" data-view="plan">Plan / Gantt</button>
+    <button class="view-tab" data-view="dashboard" id="dashboardTabBtn" style="display:none">Dashboard</button>
+  </div>
+  <div class="project-range" title="Overall project window — used as the default Gantt range and to flag tasks scheduled outside it">
+    <label>Project Start <input type="date" id="projectStartInput"></label>
+    <label>Project Finish <input type="date" id="projectFinishInput"></label>
+  </div>
+  <div class="stats" id="stats"></div>
+</div>
+
+<div class="toolbar">
+  <label>Add Task (Level)</label>
+  <select id="newLevel">
+    <option value="1">Level 1 · Project</option>
+    <option value="2">Level 2 · Stage</option>
+    <option value="3" selected>Level 3 · Work Package</option>
+    <option value="4">Level 4 · Activity</option>
+    <option value="5">Level 5 · Daily Task</option>
+  </select>
+  <input type="text" id="newName" placeholder="Task name...">
+  <button class="btn primary" id="addBtn">+ Add Row</button>
+  <button class="btn ghost" id="columnsBtn">Columns</button>
+  <button class="btn ghost" id="workloadBtn">Workload</button>
+  <button class="btn ghost" id="historyBtn">History</button>
+  <button class="btn ghost" id="resetBtn">Load Sample</button>
+  <button class="btn ghost" id="printBtn">Print / Export</button>
+
+  <div class="spacer"></div>
+
+  <div class="legend">
+    <span class="chip"><span class="swatch" style="background:var(--l1)"></span>Project</span>
+    <span class="chip"><span class="swatch" style="background:var(--l2)"></span>Stage</span>
+    <span class="chip"><span class="swatch" style="background:var(--l3)"></span>Work Pkg</span>
+    <span class="chip"><span class="swatch" style="background:var(--l4)"></span>Activity</span>
+    <span class="chip"><span class="swatch" style="background:var(--l5)"></span>Daily Task</span>
+    <span class="chip"><span class="swatch" style="background:rgba(46,158,91,.7)"></span>% Plan progress</span>
+    <span class="chip"><span class="swatch" style="background:var(--amber)"></span>Actual</span>
+    <span class="chip"><span class="swatch" style="background:var(--red)"></span>Today</span>
+  </div>
+  <span class="role-badge" id="roleBadge" style="display:none"></span>
+  <button class="btn ghost" id="logoutBtn" title="Switch user / access code" style="display:none">Switch User</button>
+  <span class="save-indicator" id="saveIndicator">Auto-saving enabled</span>
+</div>
+
+<div class="toolbar">
+  <div class="zoom-group">
+    <span class="lbl">Gantt view</span>
+    <select id="rangeMode">
+      <option value="auto">Fit to data</option>
+      <option value="week">1 Week</option>
+      <option value="month">1 Month</option>
+      <option value="3months">3 Months</option>
+      <option value="6months">6 Months</option>
+      <option value="year">1 Year</option>
+      <option value="custom">Custom range…</option>
+    </select>
+  </div>
+  <div class="zoom-group" id="customRangeGroup" style="display:none">
+    <span class="lbl">From</span>
+    <input type="date" id="customStart">
+    <span class="lbl">To</span>
+    <input type="date" id="customEnd">
+  </div>
+  <div class="zoom-group" title="Add extra months before/after the view range">
+    <span class="lbl">Timeline start</span>
+    <button id="startMinus">−1mo</button>
+    <button id="startPlus">+1mo</button>
+  </div>
+  <div class="zoom-group" title="Add extra months before/after the view range">
+    <span class="lbl">Timeline end</span>
+    <button id="endMinus">−1mo</button>
+    <button id="endPlus">+1mo</button>
+  </div>
+  <div class="zoom-group" title="Fit scales the chart so the whole selected range fits the visible/printed width without scrolling">
+    <span class="lbl">Gantt width</span>
+    <button data-zoom="fit" class="active">Fit</button>
+    <button data-zoom="8">Day</button>
+    <button data-zoom="16">Normal</button>
+    <button data-zoom="28">Wide</button>
+  </div>
+  <div class="spacer"></div>
+  <span style="font-size:11px;color:var(--muted);">Tip: drag the colored No. cell to reorder rows · right-click a row for more options</span>
+</div>
+
+<div class="split">
+  <div class="pane wbs-pane" id="wbsPane">
+    <table class="wbs" id="wbsTable">
+      <colgroup id="wbsColgroup">
+        <col data-col="code" style="width:60px">
+        <col data-col="detail" style="width:680px">
+        <col data-col="manpower" style="width:120px">
+        <col data-col="status" style="width:110px">
+        <col data-col="percent" style="width:74px">
+        <col data-col="dateType" style="width:54px">
+        <col data-col="dateStart" style="width:100px">
+        <col data-col="dateFinish" style="width:100px">
+        <col data-col="datePeriod" style="width:56px">
+        <col data-col="actions" style="width:36px">
+      </colgroup>
+      <thead>
+        <tr id="headerRow">
+          <th data-col="code" style="width:60px">No.</th>
+          <th data-col="detail" style="width:680px">DETAIL</th>
+          <th data-col="manpower" style="width:120px">Manpower</th>
+          <th data-col="status" style="width:110px">Status</th>
+          <th data-col="percent" style="width:74px">% Done</th>
+          <th data-col="dateType" style="width:54px">Plan/<br>Actual</th>
+          <th data-col="dateStart" style="width:100px">Start</th>
+          <th data-col="dateFinish" style="width:100px">Finish</th>
+          <th data-col="datePeriod" style="width:56px">Period</th>
+          <th data-col="actions" style="width:36px" class="print-hide"></th>
+        </tr>
+      </thead>
+      <tbody id="wbsBody"></tbody>
+    </table>
+  </div>
+  <div class="pane gantt-pane" id="ganttPane">
+    <div class="gantt-head" id="ganttHead">
+      <div class="gantt-months" id="ganttMonths"></div>
+      <div class="gantt-days" id="ganttDays"></div>
+    </div>
+    <div class="gantt-body" id="ganttBody"></div>
+  </div>
+  <div class="pane extra-pane" id="extraPane">
+    <table class="wbs" id="extraTable">
+      <colgroup id="extraColgroup">
+        <col data-col="jobNumber" style="width:120px">
+        <col data-col="rto" style="width:160px">
+        <col data-col="note" style="width:200px">
+      </colgroup>
+      <thead>
+        <tr id="extraHeaderRow">
+          <th data-col="jobNumber" style="width:120px">Job No.</th>
+          <th data-col="rto" style="width:160px">RTO</th>
+          <th data-col="note" style="width:200px">Note</th>
+        </tr>
+      </thead>
+      <tbody id="extraBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="dashboardView"></div>
+
+<!-- Right-click context menu -->
+<div class="ctx-menu" id="ctxMenu">
+  <button data-act="insert-above">Insert row above</button>
+  <button data-act="insert-below">Insert row below</button>
+  <button data-act="insert-sub">Insert sub-task below (level+1)</button>
+  <button data-act="duplicate">Duplicate row</button>
+  <hr>
+  <button data-act="delete" class="danger">Delete row</button>
+</div>
+
+<!-- Access code / role login -->
+<div class="modal-overlay hidden" id="loginOverlay">
+  <div class="modal" style="max-width:340px;text-align:center;">
+    <h2>Master Plan</h2>
+    <div class="modal-sub">Enter your access code to continue.</div>
+    <input type="password" id="loginPassword" placeholder="Access code" autocomplete="off"
+      style="width:100%;box-sizing:border-box;font-size:14px;padding:10px 12px;border:1px solid var(--border);border-radius:6px;text-align:center;letter-spacing:.2em;font-family:'IBM Plex Mono',monospace;margin-bottom:10px;">
+    <div id="loginError" style="display:none;color:var(--red);font-size:12px;margin-bottom:8px;">Invalid code — please try again.</div>
+    <div class="actions" style="justify-content:center;">
+      <button class="btn ghost" id="loginSkipBtn">Continue as Viewer</button>
+      <button class="btn primary" id="loginSubmitBtn">Enter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Columns manager modal -->
+<div class="modal-overlay hidden" id="columnsModal">
+  <div class="modal">
+    <h2>Manage columns</h2>
+    <div class="modal-sub">Show/hide, reorder, or remove columns. Tip: you can also drag the right edge of any column header to resize it directly in the table. Start/Finish/Period columns apply to both the Plan and Actual rows.</div>
+    <h3>Column order — main table (between No. and Plan/Actual dates)</h3>
+    <div id="mainOrderList"></div>
+    <h3>Column order — Job No. / RTO / Note panel</h3>
+    <div id="extraOrderList"></div>
+    <h3>Show / hide columns</h3>
+    <div class="grid2" id="colVisibilityChecks"></div>
+    <h3>Existing custom columns</h3>
+    <div id="customColList"></div>
+    <h3>Add new column</h3>
+    <div class="field-row">
+      <input type="text" id="newColName" placeholder="Column name, e.g. Remarks">
+      <button class="btn primary" id="addColBtn">Add</button>
+    </div>
+    <div class="actions">
+      <button class="btn" id="closeColumnsBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Print / Export modal -->
+<div class="modal-overlay hidden" id="printModal">
+  <div class="modal">
+    <h2>Print &amp; Export</h2>
+    <div class="modal-sub">Choose what to include, then print to PDF or export to Excel.</div>
+
+    <h3>Gantt scale (for printing)</h3>
+    <div class="scale-radio">
+      <label><input type="radio" name="printScale" value="daily" checked> Daily</label>
+      <label><input type="radio" name="printScale" value="weekly"> Weekly</label>
+      <label><input type="radio" name="printScale" value="monthly"> Monthly</label>
+    </div>
+
+    <h3>Levels to include</h3>
+    <div class="grid3" id="levelChecks"></div>
+
+    <h3>Columns to include</h3>
+    <div class="grid2" id="colChecks"></div>
+
+    <div class="actions">
+      <button class="btn ghost" id="exportExcelBtn">Export Excel (.xlsx)</button>
+      <button class="btn ghost" id="exportCsvBtn">Export CSV</button>
+      <button class="btn ghost" id="exportPrintHtmlBtn" title="Downloads a standalone HTML snapshot — open it in your browser and use Ctrl+P / Save as PDF there">Download Print View (HTML)</button>
+      <button class="btn primary" id="doPrintBtn">Print / Save as PDF</button>
+      <button class="btn" id="closePrintBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Workload modal -->
+<div class="modal-overlay hidden" id="workloadModal">
+  <div class="modal" style="max-width:680px;">
+    <h2>Workload by Manpower</h2>
+    <div class="modal-sub">Each task's Manpower field is grouped together. Total days = sum of each task's Plan period (Plan Finish − Plan Start + 1), so a high number may mean either a long task or several overlapping tasks for that person/team.</div>
+    <div id="workloadContent"></div>
+    <div class="actions">
+      <button class="btn" id="closeWorkloadBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="historyModal">
+  <div class="modal" style="max-width:680px;">
+    <h2>Version History / Recovery</h2>
+    <div class="modal-sub">The app keeps recent snapshots of your data automatically (about every 5 minutes while you're working, plus right before risky actions like "Load Sample" or deleting a row). If something gets deleted by mistake, restore an earlier version here — your current data is snapshotted first, so you can always undo a restore too.</div>
+    <div id="historyContent"></div>
+    <div class="actions">
+      <button class="btn ghost" id="snapshotNowBtn">Save snapshot now</button>
+      <button class="btn" id="closeHistoryBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   DATA MODEL
+   Flat ordered array. Each row has a level (1-5) and its own
+   name. The WBS code (1, 1.1, 1.1.1 ...) itself encodes the
+   level via the number of segments, so separate Lv1-Lv5
+   columns are no longer needed — everything lives in DETAIL.
+   ============================================================ */
+
+let tasks = [];
+let projectName = '';
+let projectStart = '';
+let projectFinish = '';
+// log of edits to the overall project window (for traceability)
+let projectDateLog = []; // [{time, field:'projectStart'|'projectFinish', from, to}]
+// simple access-code based roles (not real security — for steering a
+// trusted small team toward the right view, see ROLE_PASSWORDS below)
+let currentRole = 'viewer';
+let currentView = 'plan';
+const ROLE_PASSWORDS = {
+  '5555': 'manager',   // Site Manager: full data entry, no Dashboard
+  '8888': 'executive'  // MD / PM: full access + Dashboard
+};
+const ROLE_LABELS = {
+  manager: 'Site Manager',
+  executive: 'MD / PM',
+  viewer: 'Team (no Dashboard)'
+};
+let customColumns = []; // [{id, label}]
+let dayWidth = 16;
+// when true, the Gantt day-width is auto-computed so the whole
+// selected range fits the visible pane width (no horizontal scroll)
+let ganttFitMode = true;
+let extraMonthsStart = 0;
+let extraMonthsEnd = 0;
+const ROW_H = 44;       // total Gantt height per task (Plan + Actual bars)
+const SUBROW_H = 22;    // table row height per Plan/Actual sub-row
+
+// per-column print visibility (key -> boolean, true = show)
+let printColVisible = {};
+// per-level print visibility
+let printLevelVisible = {1:true,2:true,3:true,4:true,5:true};
+// per-column on-screen visibility (key -> boolean, true = show)
+let colVisible = {};
+// per-column width overrides (key -> px), from drag-resize
+let colWidths = {};
+// reorderable column order (null = default order)
+let mainColumnOrder = null;   // order of: detail, manpower, status, percent, [custom...]
+let extraColumnOrder = null;  // order of: jobNumber, rto, note
+// Gantt view range: 'auto' | 'week' | 'month' | '3months' | '6months' | 'year' | 'custom'
+let rangeMode = 'auto';
+let customRangeStart = '';
+let customRangeEnd = '';
+// drag-and-drop row reordering
+let dragSrcIdx = null;
+// per-task row height (px) — grows when DETAIL text wraps to multiple lines
+let rowHeights = [];
+let relayoutTimer = null;
+
+const STATUS_OPTIONS = ['Not Started','In Progress','Completed','Delayed','On Hold'];
+function statusClass(status){
+  return 'status-' + String(status||'Not Started').toLowerCase().replace(/\s+/g,'');
+}
+
+function uid(){ return 'r' + Math.random().toString(36).slice(2,9); }
+
+function seedData(){
+  projectName = 'HVAC Upgrade – Building A';
+  const T = (d)=>shiftDate('2026-06-14', d);
+  projectStart = T(-3);
+  projectFinish = T(60);
+  tasks = [
+    mk(1,'HVAC Upgrade – Building A', T(-3), T(57), 22, T(-3), T(2), 'PM: Somchai', 'In Progress', '', 'JN-2026-001', 'Client review meeting every Friday'),
+    mk(2,'Design Stage', T(-3), T(11), 60, T(-3), T(8), '4 staff', 'In Progress', '', ''),
+    mk(3,'Refrigerant Piping Design', T(-3), T(6), 80, T(-3), T(4), '2 engineers', 'In Progress', '', ''),
+    mk(4,'Cooling Load Calculation', T(-3), T(1), 100, T(-3), T(0), 'Engineer A', 'Completed', '', ''),
+    mk(5,'Drawing review – Day 1', T(-3), T(-3), 100, T(-3), T(-3), 'Engineer A', 'Completed', '', ''),
+    mk(5,'Drawing review – Day 2', T(-2), T(-2), 100, T(-2), T(-2), 'Engineer A', 'Completed', '', ''),
+    mk(4,'Shop Drawing Preparation', T(2), T(6), 40, T(2), '', 'Drafting team x2', 'In Progress', '', ''),
+    mk(3,'Control & Electrical Design', T(7), T(11), 0, '', '', '1 engineer', 'Not Started', '', ''),
+    mk(2,'Procurement Stage', T(12), T(26), 10, T(12), '', 'Purchasing dept', 'In Progress', 'RTO.PM2026-06-0010', 'PO-2026-014'),
+    mk(3,'Order AHU / Chiller', T(12), T(19), 20, T(12), '', '2 staff', 'In Progress', 'RTO.PM2026-06-0010', 'PO-2026-014'),
+    mk(3,'Order Pipes & Valves', T(15), T(26), 0, '', '', '2 staff', 'Not Started', 'RTO.PM2026-06-0011', '', 'Waiting on supplier quotation'),
+    mk(2,'Installation Stage', T(27), T(57), 0, '', '', 'Install team x8', 'Not Started', '', ''),
+    mk(3,'Install AHU Units', T(27), T(38), 0, '', '', '4 technicians', 'Not Started', '', ''),
+    mk(4,'Move equipment to site', T(27), T(28), 0, '', '', '4 technicians', 'Not Started', '', ''),
+    mk(4,'Position & level units', T(29), T(38), 0, '', '', '4 technicians', 'Not Started', '', ''),
+    mk(3,'Pipe Routing & Insulation', T(33), T(50), 0, '', '', '4 technicians', 'Not Started', '', ''),
+    mk(3,'Testing & Commissioning', T(51), T(57), 0, '', '', '2 engineers', 'Not Started', '', ''),
+  ];
+}
+function mk(level,name,ps,pf,pct,as,af,mp,status,rto,jobNumber,note){
+  return {id:uid(), level, name, planStart:ps, planFinish:pf, percent:pct||0,
+          actualStart:as||'', actualFinish:af||'', manpower:mp||'',
+          status: status || 'Not Started', rto: rto || '', jobNumber: jobNumber || '',
+          note: note || '', extra:{}};
+}
+function shiftDate(base, days){
+  const d = new Date(base+'T00:00:00');
+  d.setDate(d.getDate()+days);
+  return d.toISOString().slice(0,10);
+}
+
+/* ============================================================
+   COLUMN DEFINITIONS (for print/column manager)
+   ============================================================ */
+function allColumns(){
+  const base = [
+    {key:'code', label:'No.'},
+    {key:'detail', label:'DETAIL'},
+    {key:'manpower', label:'Manpower'},
+    {key:'status', label:'Status'},
+  ];
+  customColumns.forEach(c=> base.push({key:c.id, label:c.label, custom:true}));
+  base.push(
+    {key:'dateType', label:'Plan/Actual'},
+    {key:'percent', label:'% Done'},
+    {key:'dateStart', label:'Start'},
+    {key:'dateFinish', label:'Finish'},
+    {key:'datePeriod', label:'Period'},
+    {key:'jobNumber', label:'Job No.'},
+    {key:'rto', label:'RTO'},
+    {key:'note', label:'Note'}
+  );
+  return base;
+}
+
+// default pixel widths for columns (used for colgroup + new columns)
+const DEFAULT_COL_WIDTH = {
+  code:60, detail:680, manpower:120, status:110,
+  dateType:54, percent:62, dateStart:100, dateFinish:100, datePeriod:56, actions:36,
+  jobNumber:80, rto:110, note:110
+};
+function colWidth(key){
+  return colWidths[key] || DEFAULT_COL_WIDTH[key] || 120;
+}
+function colLabel(key){
+  const found = allColumns().find(c=>c.key===key);
+  return found ? found.label : key;
+}
+// reorderable column keys for the main table (between "No." and the Plan/Actual date block)
+function mainReorderable(){
+  return ['detail','manpower','status', ...customColumns.map(c=>c.id)];
+}
+function getMainOrder(){
+  const valid = mainReorderable();
+  if(!mainColumnOrder) return valid.slice();
+  const filtered = mainColumnOrder.filter(k=>valid.includes(k));
+  valid.forEach(k=>{ if(!filtered.includes(k)) filtered.push(k); });
+  return filtered;
+}
+// reorderable column keys for the extra (Job No./RTO/Note) pane
+function extraReorderable(){
+  return ['jobNumber','rto','note'];
+}
+function getExtraOrder(){
+  const valid = extraReorderable();
+  if(!extraColumnOrder) return valid.slice();
+  const filtered = extraColumnOrder.filter(k=>valid.includes(k));
+  valid.forEach(k=>{ if(!filtered.includes(k)) filtered.push(k); });
+  return filtered;
+}
+function moveInOrder(orderArr, key, dir){
+  const idx = orderArr.indexOf(key);
+  const swapIdx = idx+dir;
+  if(idx<0 || swapIdx<0 || swapIdx>=orderArr.length) return orderArr;
+  const copy = orderArr.slice();
+  [copy[idx], copy[swapIdx]] = [copy[swapIdx], copy[idx]];
+  return copy;
+}
+
+/* ============================================================
+   STORAGE — Google Sheets via Apps Script Web App
+   ============================================================ */
+// Deployed Apps Script Web App URL (see database-setup-guide.md).
+const API_URL = 'https://script.google.com/macros/s/AKfycbwo6SRhH9hmh73wW72kk5l8gHOxt-pcjZjH1cTSBcbG-rvngUO_4wf9DsEYj48RgQZL8Q/exec';
+
+async function apiGet(action){
+  const url = `${API_URL}?action=${encodeURIComponent(action)}&_=${Date.now()}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('API GET '+action+' failed: HTTP '+res.status);
+  return res.json();
+}
+// Content-Type text/plain avoids a CORS preflight (OPTIONS) request, which
+// the Apps Script web app doesn't handle — Apps Script still reads the raw
+// body via e.postData.contents regardless of the declared content type.
+async function apiPost(payload){
+  const res = await fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(payload)
+  });
+  if(!res.ok) throw new Error('API POST '+(payload&&payload.action)+' failed: HTTP '+res.status);
+  return res.json();
+}
+
+// Build the plain-object snapshot of all persisted state (used for both
+// the live save and version-history snapshots).
+function buildSaveData(){
+  return {tasks, projectName, projectStart, projectFinish, projectDateLog, customColumns, dayWidth, ganttFitMode, extraMonthsStart, extraMonthsEnd,
+    colVisible, colWidths, mainColumnOrder, extraColumnOrder, rangeMode, customRangeStart, customRangeEnd};
+}
+// Apply a previously-saved (or history) snapshot to the live state.
+function applyLoadedData(parsed){
+  tasks = parsed.tasks.map(t=> Object.assign({extra:{}, status:'Not Started', rto:'', jobNumber:'', note:''}, t));
+  projectName = parsed.projectName || '';
+  projectStart = parsed.projectStart || '';
+  projectFinish = parsed.projectFinish || '';
+  projectDateLog = Array.isArray(parsed.projectDateLog) ? parsed.projectDateLog : [];
+  customColumns = parsed.customColumns || [];
+  dayWidth = parsed.dayWidth || 16;
+  ganttFitMode = parsed.ganttFitMode !== false;
+  extraMonthsStart = parsed.extraMonthsStart || 0;
+  extraMonthsEnd = parsed.extraMonthsEnd || 0;
+  colVisible = parsed.colVisible || {};
+  colWidths = parsed.colWidths || {};
+  mainColumnOrder = parsed.mainColumnOrder || null;
+  extraColumnOrder = parsed.extraColumnOrder || null;
+  rangeMode = parsed.rangeMode || 'auto';
+  customRangeStart = parsed.customRangeStart || '';
+  customRangeEnd = parsed.customRangeEnd || '';
+}
+async function loadTasks(){
+  try{
+    const parsed = await apiGet('getData');
+    if(parsed && !parsed.error && Array.isArray(parsed.tasks) && parsed.tasks.length){
+      applyLoadedData(parsed);
+      return;
+    }
+  }catch(e){ console.error('loadTasks failed:', e); }
+  seedData();
+}
+let saveTimer=null;
+function saveTasks(){
+  const ind = document.getElementById('saveIndicator');
+  ind.textContent='Saving...';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    try{
+      const data = buildSaveData();
+      const result = await apiPost({action:'saveData', data});
+      if(result && result.ok){
+        ind.textContent='Saved ✓';
+      } else {
+        ind.textContent='Save failed';
+        console.error('saveData error:', result);
+      }
+      pushHistorySnapshot(); // throttled automatic backup
+    }catch(e){
+      ind.textContent='Save failed';
+      console.error('saveTasks failed:', e);
+    }
+    setTimeout(()=>{ ind.textContent='Auto-saving enabled'; },1500);
+  },400);
+}
+
+/* ============================================================
+   VERSION HISTORY / RECOVERY
+   Keeps the last few snapshots of the data so it can be restored
+   if someone accidentally deletes or overwrites something.
+   Auto-snapshots are throttled (HISTORY_MIN_INTERVAL_MS apart);
+   labeled snapshots (before risky actions) are always saved.
+   Stored in the "History" sheet via the Apps Script API.
+   ============================================================ */
+const HISTORY_MIN_INTERVAL_MS = 5*60*1000; // 5 minutes between auto-snapshots
+async function readHistory(){
+  try{
+    const res = await apiGet('getHistory');
+    if(res && Array.isArray(res.history)) return res.history;
+  }catch(e){ console.error('readHistory failed:', e); }
+  return [];
+}
+async function pushHistorySnapshot(label){
+  // Deep-cloned synchronously (before any await) so that a caller which
+  // does `pushHistorySnapshot('Before delete'); tasks.splice(...)` without
+  // awaiting still snapshots the state as it was *before* the mutation —
+  // buildSaveData() returns live references, so a plain copy wouldn't be enough.
+  const data = JSON.parse(JSON.stringify(buildSaveData()));
+  try{
+    if(!label){
+      const history = await readHistory();
+      if(history.length){
+        const last = history[history.length-1];
+        const lastTime = new Date(last.time).getTime();
+        if((Date.now() - lastTime) < HISTORY_MIN_INTERVAL_MS) return; // throttle
+      }
+    }
+    await apiPost({action:'saveSnapshot', label: label || 'Auto-save', data});
+  }catch(e){ /* best-effort, ignore failures */ }
+}
+function formatHistoryTime(ts){
+  const d = new Date(ts);
+  const pad = n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+async function renderHistoryList(){
+  const el = document.getElementById('historyContent');
+  el.innerHTML = '<div style="color:var(--muted);font-size:13px;">Loading…</div>';
+  const history = await readHistory();
+  if(!history.length){
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:10px 0;">No saved versions yet — versions are recorded automatically as you work.</div>';
+    return;
+  }
+  const rows = history.slice().reverse(); // newest first
+  el.innerHTML = `<table class="dash-table"><thead><tr><th>When</th><th>Note</th><th>Tasks</th><th></th></tr></thead><tbody>
+    ${rows.map((h,idx)=>`<tr>
+      <td style="font-family:'IBM Plex Mono',monospace;white-space:nowrap;">${formatHistoryTime(h.time)}</td>
+      <td>${escapeHtml(h.label||'Auto-save')}</td>
+      <td style="text-align:center;">${(h.data.tasks||[]).length}</td>
+      <td><button class="btn ghost" data-restore="${rows.length-1-idx}">Restore</button></td>
+    </tr>`).join('')}
+  </tbody></table>`;
+  el.querySelectorAll('[data-restore]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const i = Number(btn.dataset.restore);
+      if(!confirm('Restore this version? Your current data will be saved as a snapshot first, then replaced with the selected version.')) return;
+      await pushHistorySnapshot('Before restore'); // safety net: snapshot current state first
+      const result = await apiPost({action:'restoreSnapshot', index:i});
+      if(result && result.ok){
+        applyLoadedData(result.data || history[i].data);
+        renderAll();
+      } else {
+        alert('Restore failed: ' + (result && result.error ? result.error : 'unknown error'));
+      }
+      document.getElementById('historyModal').classList.add('hidden');
+    });
+  });
+}
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function wbsCodes(){
+  const counters=[0,0,0,0,0];
+  return tasks.map(t=>{
+    const lvl = Math.min(Math.max(t.level,1),5);
+    counters[lvl-1]++;
+    for(let i=lvl;i<5;i++) counters[i]=0;
+    return counters.slice(0,lvl).join('.');
+  });
+}
+function periodDays(start,end){
+  if(!start||!end) return '';
+  const d1=new Date(start+'T00:00:00'), d2=new Date(end+'T00:00:00');
+  const diff = Math.round((d2-d1)/86400000)+1;
+  return diff>0?diff:'';
+}
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s){ return escapeHtml(s); }
+
+/* ============================================================
+   % DONE — Plan% (auto, time-based) and Actual% (Site Manager
+   entry at the leaf level, rolled up as an average for parents)
+   ============================================================ */
+function dayDiffRaw(a,b){
+  return Math.round((b-a)/86400000);
+}
+function childIndices(i){
+  const lvl = Math.min(Math.max(tasks[i].level,1),5);
+  const out=[];
+  for(let j=i+1;j<tasks.length;j++){
+    const clvl = Math.min(Math.max(tasks[j].level,1),5);
+    if(clvl<=lvl) break;
+    if(clvl===lvl+1) out.push(j);
+  }
+  return out;
+}
+function hasChildren(i){
+  if(Math.min(Math.max(tasks[i].level,1),5) >= 5) return false;
+  return childIndices(i).length > 0;
+}
+// Plan% = expected progress today based on a straight-line schedule
+// (e.g. a 10-day task should be ~10% done after 1 day).
+function planPercentFor(t){
+  if(!t.planStart || !t.planFinish) return 0;
+  const start = new Date(t.planStart+'T00:00:00');
+  const finish = new Date(t.planFinish+'T00:00:00');
+  const today = new Date('2026-06-14T00:00:00');
+  if(today < start) return 0;
+  if(today >= finish) return 100;
+  const totalDays = periodDays(t.planStart,t.planFinish) || 1;
+  const elapsed = dayDiffRaw(start, today) + 1;
+  return Math.round(Math.min(100, Math.max(0,(elapsed/totalDays)*100)));
+}
+// Returns {planPct[], actualPct[]} for every task. Level 5 (or any
+// task with no sub-items): Plan% is time-based, Actual% is the
+// manually entered t.percent. Levels 1-4: both are the average of
+// their direct children's values (computed bottom-up).
+function computePercents(){
+  const n = tasks.length;
+  const planPct = new Array(n);
+  const actualPct = new Array(n);
+  for(let i=0;i<n;i++){
+    planPct[i] = planPercentFor(tasks[i]);
+    actualPct[i] = Math.min(Math.max(Number(tasks[i].percent)||0,0),100);
+  }
+  for(let lvl=4; lvl>=1; lvl--){
+    for(let i=0;i<n;i++){
+      if(Math.min(Math.max(tasks[i].level,1),5) !== lvl) continue;
+      const kids = childIndices(i);
+      if(kids.length){
+        planPct[i] = Math.round(kids.reduce((s,j)=>s+planPct[j],0)/kids.length);
+        actualPct[i] = Math.round(kids.reduce((s,j)=>s+actualPct[j],0)/kids.length);
+      }
+    }
+  }
+  return {planPct, actualPct};
+}
+
+/* ============================================================
+   RENDER: STATS
+   ============================================================ */
+function renderStats(){
+  const total = tasks.length;
+  const {planPct, actualPct} = computePercents();
+  const topLevelIdx = tasks.map((t,i)=>i).filter(i=>tasks[i].level===1);
+  const idxSource = topLevelIdx.length ? topLevelIdx : tasks.map((t,i)=>i);
+  const avgActual = idxSource.length
+    ? Math.round(idxSource.reduce((s,i)=>s+actualPct[i],0) / idxSource.length)
+    : 0;
+  const avgPlan = idxSource.length
+    ? Math.round(idxSource.reduce((s,i)=>s+planPct[i],0) / idxSource.length)
+    : 0;
+  const today = new Date('2026-06-14T00:00:00');
+  const overdue = tasks.filter((t,i)=>{
+    if(!t.planFinish || actualPct[i]>=100) return false;
+    return new Date(t.planFinish+'T00:00:00') < today;
+  }).length;
+  const delayed = tasks.filter((t,i)=>{
+    if(!t.planStart) return false;
+    if(new Date(t.planStart+'T00:00:00') > today) return false; // not started yet, per plan
+    if(actualPct[i] >= 100) return false;
+    return actualPct[i] < planPct[i];
+  }).length;
+  const counts = [1,2,3,4,5].map(l=>tasks.filter(t=>t.level===l).length);
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><b>${total}</b><span>Total Tasks</span></div>
+    <div class="stat"><b>${avgActual}% <span style="color:#8fb4cb;font-size:11px;">/ ${avgPlan}%</span></b><span>Actual / Plan %</span></div>
+    <div class="stat"><b style="${delayed>0?'color:#ffb4b4':''}">${delayed}</b><span>Delayed</span></div>
+    <div class="stat"><b>${overdue}</b><span>Overdue (Past Finish)</span></div>
+    <div class="stat"><b>${counts.join(' / ')}</b><span>L1/L2/L3/L4/L5</span></div>
+  `;
+}
+
+/* ============================================================
+   RENDER: TABLE HEADER (incl. custom columns)
+   ============================================================ */
+function renderHeader(){
+  // --- main table header + colgroup ---
+  const headerRow = document.getElementById('headerRow');
+  const colgroup = document.getElementById('wbsColgroup');
+  let headerHtml = `<th data-col="code" style="width:${colWidth('code')}px">No.</th>`;
+  let colHtml = `<col data-col="code" style="width:${colWidth('code')}px">`;
+  getMainOrder().forEach(key=>{
+    const w = colWidth(key);
+    const isCustom = customColumns.some(c=>c.id===key);
+    headerHtml += `<th data-col="${key}" style="width:${w}px"${isCustom?' data-custom="1"':''}>${escapeHtml(colLabel(key))}</th>`;
+    colHtml += `<col data-col="${key}" style="width:${w}px">`;
+  });
+  ['dateType','percent','dateStart','dateFinish','datePeriod'].forEach(key=>{
+    const w = colWidth(key);
+    const label = key==='dateType' ? 'Plan/<br>Actual' : (key==='percent' ? '%' : escapeHtml(colLabel(key)));
+    headerHtml += `<th data-col="${key}" style="width:${w}px">${label}</th>`;
+    colHtml += `<col data-col="${key}" style="width:${w}px">`;
+  });
+  headerHtml += `<th data-col="actions" style="width:${colWidth('actions')}px" class="print-hide"></th>`;
+  colHtml += `<col data-col="actions" style="width:${colWidth('actions')}px">`;
+  headerRow.innerHTML = headerHtml;
+  colgroup.innerHTML = colHtml;
+
+  // --- extra (Job No./RTO/Note) table header + colgroup ---
+  const extraHeaderRow = document.getElementById('extraHeaderRow');
+  const extraColgroup = document.getElementById('extraColgroup');
+  let extraHeaderHtml='', extraColHtml='';
+  getExtraOrder().forEach(key=>{
+    const w = colWidth(key);
+    extraHeaderHtml += `<th data-col="${key}" style="width:${w}px">${escapeHtml(colLabel(key))}</th>`;
+    extraColHtml += `<col data-col="${key}" style="width:${w}px">`;
+  });
+  extraHeaderRow.innerHTML = extraHeaderHtml;
+  extraColgroup.innerHTML = extraColHtml;
+
+  applyColumnVisibilityClasses();
+  applyTableWidth('wbsTable','wbsColgroup');
+  applyTableWidth('extraTable','extraColgroup');
+  addColumnResizers();
+}
+
+/* ============================================================
+   Set the table's own width = sum of its VISIBLE <col> widths.
+   With table-layout:fixed and no explicit table width, browsers
+   shrink/stretch columns to fit the container ("squeezed" look)
+   instead of honoring the widths we set — this forces the table
+   to its true total width so the pane scrolls horizontally and
+   each column keeps the size you set. Hidden columns are excluded
+   so the table — and its pane — shrink to reclaim the freed space
+   for the Gantt chart.
+   When forPrint is true, visibility is based on the Print/Export
+   column checkboxes (printColVisible) instead of the on-screen
+   ones (colVisible) — a column hidden on screen can still be
+   ticked to appear in the printed/exported output, and vice versa.
+   ============================================================ */
+function computeTableWidth(colgroupId, forPrint){
+  const colgroup = document.getElementById(colgroupId);
+  if(!colgroup) return 0;
+  let total = 0;
+  colgroup.querySelectorAll('col').forEach(col=>{
+    const key = col.dataset.col;
+    const hidden = forPrint ? (printColVisible[key]===false) : (colVisible[key]===false);
+    if(hidden) return;
+    total += parseInt(col.style.width, 10) || 0;
+  });
+  return total;
+}
+function applyTableWidth(tableId, colgroupId, forPrint, maxWidth){
+  const table = document.getElementById(tableId);
+  if(!table) return;
+  let w = computeTableWidth(colgroupId, forPrint);
+  if(maxWidth && w > maxWidth) w = maxWidth; // table-layout:fixed shrinks columns proportionally
+  table.style.width = w+'px';
+}
+
+/* ============================================================
+   COLUMN WIDTH RESIZE (drag the right edge of a header cell)
+   ============================================================ */
+function addColumnResizers(){
+  document.querySelectorAll('#wbsTable thead th, #extraTable thead th').forEach(th=>{
+    const key = th.dataset.col;
+    if(!key || key==='actions') return;
+    const table = th.closest('table');
+    const colEl = table.querySelector(`colgroup col[data-col="${key}"]`);
+    if(!colEl) return;
+    const handle = document.createElement('div');
+    handle.className = 'col-resizer';
+    th.appendChild(handle);
+    handle.addEventListener('mousedown', (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      const startX = e.clientX;
+      const startWidth = colEl.getBoundingClientRect().width;
+      handle.classList.add('resizing');
+      function onMove(ev){
+        const newWidth = Math.max(32, Math.round(startWidth + (ev.clientX-startX)));
+        colEl.style.width = newWidth+'px';
+        th.style.width = newWidth+'px';
+        applyTableWidth(table.id, table.querySelector('colgroup').id);
+      }
+      function onUp(){
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        handle.classList.remove('resizing');
+        colWidths[key] = parseInt(colEl.style.width);
+        applyTableWidth(table.id, table.querySelector('colgroup').id);
+        saveTasks();
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
+}
+function applyColumnVisibilityClasses(){
+  allColumns().forEach(col=>{
+    const printVisible = printColVisible[col.key] !== false;
+    const screenVisible = colVisible[col.key] !== false;
+    document.querySelectorAll(`[data-col="${col.key}"]`).forEach(el=>{
+      el.classList.toggle('print-hide', !printVisible);
+      el.classList.toggle('col-hide', !screenVisible);
+    });
+  });
+}
+
+/* ============================================================
+   Build one rowspan=2 cell for the main table, for a given
+   column key. Used so columns can be reordered freely.
+   ============================================================ */
+function buildMainCell(key, t, i, pct){
+  switch(key){
+    case 'detail':
+      return `<td class="detail-cell" data-col="detail" rowspan="2"><textarea class="detail-input" data-field="name" data-idx="${i}" rows="1">${escapeHtml(t.name)}</textarea></td>`;
+    case 'manpower':
+      return `<td data-col="manpower" rowspan="2"><input type="text" value="${escapeAttr(t.manpower)}" data-field="manpower" data-idx="${i}"></td>`;
+    case 'status': {
+      let html = `<td class="status-cell ${statusClass(t.status)}" data-col="status" rowspan="2"><select class="status-select" data-field="status" data-idx="${i}">`;
+      STATUS_OPTIONS.forEach(opt=>{
+        html += `<option value="${opt}" ${t.status===opt?'selected':''}>${opt}</option>`;
+      });
+      html += `</select></td>`;
+      return html;
+    }
+    case 'percent':
+      return ''; // unreachable: % Done now lives in the Plan/Actual date-section
+    default: {
+      // custom column
+      const val = (t.extra && t.extra[key]) || '';
+      return `<td data-col="${key}" rowspan="2"><input type="text" value="${escapeAttr(val)}" data-field="extra" data-extra-id="${key}" data-idx="${i}"></td>`;
+    }
+  }
+}
+
+/* ============================================================
+   RENDER: WBS TABLE BODY
+   Each task renders as TWO physical rows (Plan / Actual).
+   No./DETAIL/Manpower/Status/RTO/Job No./%Done span both rows.
+   ============================================================ */
+function renderTable(){
+  const body = document.getElementById('wbsBody');
+  const codes = wbsCodes();
+  const {planPct, actualPct} = computePercents();
+  let html='';
+  tasks.forEach((t,i)=>{
+    const lvl = Math.min(Math.max(t.level,1),5);
+    const planPeriod = periodDays(t.planStart,t.planFinish);
+    const actualPeriod = periodDays(t.actualStart,t.actualFinish);
+    const pct = Number(t.percent)||0;
+    const hidden = printLevelVisible[lvl] === false;
+    const hiddenCls = hidden?'row-hidden':'';
+
+    // ---- Row 1 (Plan) ----
+    html += `<tr class="level-${lvl} ${hiddenCls}" data-idx="${i}" data-sub="1">`;
+    html += `<td class="code" data-col="code" rowspan="2" draggable="true" title="Drag the cell to reorder · right-click for more options. The number sets this task's level (1-5).">`;
+    html += `<input type="number" class="level-input" min="1" max="5" value="${lvl}" data-field="level" data-idx="${i}">`;
+    html += `<div class="wbs-code">${codes[i]}</div>`;
+    html += `</td>`;
+    getMainOrder().forEach(key=>{
+      html += buildMainCell(key, t, i, pct);
+    });
+    // Plan date row
+    html += `<td class="dtype plan" data-col="dateType">Plan</td>`;
+    html += `<td class="calc datecell pctcell" data-col="percent" title="Auto-calculated from elapsed time vs. Plan period">${planPct[i]}%</td>`;
+    html += `<td class="datecell" data-col="dateStart"><input type="date" value="${t.planStart||''}" data-field="planStart" data-idx="${i}"></td>`;
+    html += `<td class="datecell" data-col="dateFinish"><input type="date" value="${t.planFinish||''}" data-field="planFinish" data-idx="${i}"></td>`;
+    html += `<td class="calc datecell" data-col="datePeriod">${planPeriod}</td>`;
+    html += `<td class="actions print-hide" data-col="actions" rowspan="2"><button class="del-btn" data-action="delete" data-idx="${i}" title="Delete row">✕</button></td>`;
+    html += `</tr>`;
+
+    // ---- Row 2 (Actual) ----
+    html += `<tr class="level-${lvl} ${hiddenCls}" data-idx="${i}" data-sub="2">`;
+    html += `<td class="dtype actual" data-col="dateType">Actual</td>`;
+    if(hasChildren(i)){
+      html += `<td class="calc datecell pctcell" data-col="percent" title="Rolled up from the average of its sub-items">${actualPct[i]}%</td>`;
+    } else {
+      html += `<td class="datecell pct" data-col="percent"><div class="pct-wrap"><div class="pct-bar" style="width:${actualPct[i]}%"></div><input type="number" min="0" max="100" value="${actualPct[i]}" data-field="percent" data-idx="${i}" title="Entered by Site Manager">%</div></td>`;
+    }
+    html += `<td class="datecell" data-col="dateStart"><input type="date" value="${t.actualStart||''}" data-field="actualStart" data-idx="${i}"></td>`;
+    html += `<td class="datecell" data-col="dateFinish"><input type="date" value="${t.actualFinish||''}" data-field="actualFinish" data-idx="${i}"></td>`;
+    html += `<td class="calc datecell" data-col="datePeriod">${actualPeriod}</td>`;
+    html += `</tr>`;
+  });
+  body.innerHTML = html;
+
+  // attach listeners
+  body.querySelectorAll('input, select, textarea').forEach(inp=>{
+    inp.addEventListener('change', onFieldChange);
+  });
+  // DETAIL textarea: auto-grow height as the user types / presses Enter
+  body.querySelectorAll('textarea.detail-input').forEach(ta=>{
+    autoGrowTextarea(ta);
+    ta.addEventListener('input', ()=>{
+      autoGrowTextarea(ta);
+      clearTimeout(relayoutTimer);
+      relayoutTimer = setTimeout(relayout, 150);
+    });
+  });
+  body.querySelectorAll('[data-action="delete"]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      const idx = Number(e.currentTarget.dataset.idx);
+      if(confirm('Delete this row?')){
+        pushHistorySnapshot('Before delete: '+(tasks[idx].name||'(untitled)'));
+        tasks.splice(idx,1);
+        saveTasks();
+        renderAll();
+      }
+    });
+  });
+  // right-click context menu + drag/drop on rows
+  body.querySelectorAll('tr').forEach(tr=>{
+    tr.addEventListener('contextmenu', onRowContextMenu);
+    tr.addEventListener('dragover', onRowDragOver);
+    tr.addEventListener('dragleave', onRowDragLeave);
+    tr.addEventListener('drop', onRowDrop);
+  });
+  // drag handle (the "No." cell)
+  body.querySelectorAll('td.code').forEach(td=>{
+    td.addEventListener('dragstart', onRowDragStart);
+    td.addEventListener('dragend', onRowDragEnd);
+  });
+
+  applyColumnVisibilityClasses();
+}
+
+/* ============================================================
+   RENDER: EXTRA PANE (Job No., placed after the Gantt chart)
+   One row per task, height = ROW_H to align with Gantt/WBS rows.
+   ============================================================ */
+function renderExtraTable(){
+  const body = document.getElementById('extraBody');
+  const order = getExtraOrder();
+  const placeholders = {jobNumber:'Job no.', rto:'RTO.PM2026-...', note:'Note'};
+  let html='';
+  tasks.forEach((t,i)=>{
+    const lvl = Math.min(Math.max(t.level,1),5);
+    const hidden = printLevelVisible[lvl] === false;
+    const h = rowHeights[i] || ROW_H;
+    html += `<tr class="level-${lvl} ${hidden?'row-hidden':''}" data-idx="${i}" style="height:${h}px">`;
+    order.forEach(key=>{
+      html += `<td data-col="${key}" style="height:${h}px"><input type="text" value="${escapeAttr(t[key])}" data-field="${key}" data-idx="${i}" placeholder="${placeholders[key]||''}"></td>`;
+    });
+    html += `</tr>`;
+  });
+  body.innerHTML = html;
+  body.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('change', onFieldChange);
+  });
+  applyColumnVisibilityClasses();
+}
+
+function onFieldChange(e){
+  const idx = Number(e.target.dataset.idx);
+  const field = e.target.dataset.field;
+  let val = e.target.value;
+  if(field==='extra'){
+    const colId = e.target.dataset.extraId;
+    if(!tasks[idx].extra) tasks[idx].extra = {};
+    tasks[idx].extra[colId] = val;
+    saveTasks();
+    return; // no full re-render needed for plain text extra fields
+  }
+  if(field==='percent'){
+    val = Math.min(Math.max(Number(val)||0,0),100);
+  }
+  if(field==='level'){
+    val = Math.min(Math.max(Math.round(Number(val))||1,1),5);
+  }
+  const TODAY = '2026-06-14';
+  tasks[idx][field] = val;
+
+  if(field==='status' && val==='In Progress'){
+    if(!tasks[idx].actualStart) tasks[idx].actualStart = TODAY;
+  }
+  if(field==='status' && val==='Completed'){
+    if(!tasks[idx].actualStart) tasks[idx].actualStart = TODAY;
+    if(!tasks[idx].actualFinish) tasks[idx].actualFinish = TODAY;
+    if(!hasChildren(idx)) tasks[idx].percent = 100;
+  }
+  if(field==='percent'){
+    if(val >= 100){
+      if(!tasks[idx].actualStart) tasks[idx].actualStart = TODAY;
+      if(!tasks[idx].actualFinish) tasks[idx].actualFinish = TODAY;
+      tasks[idx].status = 'Completed';
+    } else if(tasks[idx].status === 'Completed'){
+      // can't be "Completed" if progress dropped back below 100%
+      tasks[idx].status = 'In Progress';
+    }
+  }
+
+  saveTasks();
+  renderAll();
+}
+
+/* ============================================================
+   ROW CONTEXT MENU (Excel-style insert/delete)
+   ============================================================ */
+let ctxTargetIdx = null;
+function onRowContextMenu(e){
+  e.preventDefault();
+  ctxTargetIdx = Number(e.currentTarget.dataset.idx);
+  const menu = document.getElementById('ctxMenu');
+  menu.style.display='block';
+  const x = Math.min(e.clientX, window.innerWidth - 200);
+  const y = Math.min(e.clientY, window.innerHeight - 180);
+  menu.style.left = x+'px';
+  menu.style.top = y+'px';
+}
+document.addEventListener('click', (e)=>{
+  const menu = document.getElementById('ctxMenu');
+  if(!menu.contains(e.target)) menu.style.display='none';
+});
+document.getElementById('ctxMenu').addEventListener('click', (e)=>{
+  const act = e.target.dataset.act;
+  if(!act || ctxTargetIdx===null) return;
+  const idx = ctxTargetIdx;
+  const ref = tasks[idx];
+  const today = '2026-06-14';
+  if(act==='insert-above'){
+    tasks.splice(idx, 0, mk(ref.level,'New Task',today,today,0,'','','','Not Started','',''));
+  } else if(act==='insert-below'){
+    tasks.splice(idx+1, 0, mk(ref.level,'New Task',today,today,0,'','','','Not Started','',''));
+  } else if(act==='insert-sub'){
+    const lvl = Math.min(ref.level+1,5);
+    tasks.splice(idx+1, 0, mk(lvl,'New Sub-task',today,today,0,'','','','Not Started','',''));
+  } else if(act==='duplicate'){
+    const copy = JSON.parse(JSON.stringify(ref));
+    copy.id = uid();
+    copy.name = ref.name + ' (copy)';
+    tasks.splice(idx+1, 0, copy);
+  } else if(act==='delete'){
+    if(confirm('Delete this row?')){
+      pushHistorySnapshot('Before delete: '+(ref.name||'(untitled)'));
+      tasks.splice(idx,1);
+    }
+  }
+  document.getElementById('ctxMenu').style.display='none';
+  saveTasks();
+  renderAll();
+});
+
+/* ============================================================
+   ROW DRAG & DROP (Excel-style row reordering)
+   ============================================================ */
+function onRowDragStart(e){
+  const tr = e.currentTarget.closest('tr');
+  dragSrcIdx = Number(tr.dataset.idx);
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', String(dragSrcIdx));
+  e.currentTarget.classList.add('dragging');
+}
+function onRowDragEnd(e){
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('tr.drag-over').forEach(tr=>tr.classList.remove('drag-over'));
+}
+function onRowDragOver(e){
+  if(dragSrcIdx===null) return;
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+function onRowDragLeave(e){
+  e.currentTarget.classList.remove('drag-over');
+}
+function onRowDrop(e){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const targetIdx = Number(e.currentTarget.dataset.idx);
+  if(dragSrcIdx===null || dragSrcIdx===targetIdx) return;
+  const [moved] = tasks.splice(dragSrcIdx,1);
+  let insertAt = targetIdx;
+  if(dragSrcIdx < targetIdx) insertAt = targetIdx; // shift accounts for removed item
+  tasks.splice(insertAt, 0, moved);
+  dragSrcIdx = null;
+  saveTasks();
+  renderAll();
+}
+
+/* ============================================================
+   RENDER: GANTT
+   ============================================================ */
+function getTimelineBounds(){
+  const today = new Date('2026-06-14T00:00:00');
+  let min, max;
+
+  if(rangeMode==='custom' && customRangeStart && customRangeEnd){
+    min = new Date(customRangeStart+'T00:00:00');
+    max = new Date(customRangeEnd+'T00:00:00');
+  } else if(rangeMode!=='auto' && rangeMode!=='custom'){
+    min = addDays(today,-3);
+    switch(rangeMode){
+      case 'week': max = addDays(today,7); break;
+      case 'month': max = addMonths(today,1); break;
+      case '3months': max = addMonths(today,3); break;
+      case '6months': max = addMonths(today,6); break;
+      case 'year': max = addMonths(today,12); break;
+      default: max = addMonths(today,1);
+    }
+  } else {
+    const dates=[];
+    tasks.forEach(t=>{
+      ['planStart','planFinish','actualStart','actualFinish'].forEach(f=>{
+        if(t[f]) dates.push(new Date(t[f]+'T00:00:00'));
+      });
+    });
+    if(projectStart && projectFinish){
+      // Use the overall project window as the base range, but still
+      // stretch to cover any task dates that fall outside it so
+      // nothing is clipped from view.
+      min = new Date(projectStart+'T00:00:00');
+      max = new Date(projectFinish+'T00:00:00');
+      dates.forEach(d=>{
+        if(d<min) min = d;
+        if(d>max) max = d;
+      });
+      min = addDays(min,-2);
+      max = addDays(max,3);
+    } else if(!dates.length){
+      min = addDays(today,-5);
+      max = addDays(today,30);
+    } else {
+      min = new Date(Math.min(...dates, today));
+      max = new Date(Math.max(...dates, today));
+      min = addDays(min,-2);
+      max = addDays(max,3);
+    }
+  }
+  min = addMonths(min, -extraMonthsStart);
+  max = addMonths(max, extraMonthsEnd);
+  if(max <= min) max = addDays(min,1);
+  return {start:min, end:max};
+}
+function addDays(d,n){
+  const r = new Date(d);
+  r.setDate(r.getDate()+n);
+  return r;
+}
+function addMonths(d,n){
+  const r = new Date(d);
+  r.setMonth(r.getMonth()+n);
+  return r;
+}
+function dayDiff(a,b){
+  return Math.round((b-a)/86400000);
+}
+
+const MONTH_NAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function renderGantt(activeDayWidth, labelMode){
+  const {start,end} = getTimelineBounds();
+  const totalDays = dayDiff(start,end)+1;
+  let dw;
+  if(activeDayWidth){
+    dw = activeDayWidth;
+  } else if(ganttFitMode){
+    const paneEl = document.getElementById('ganttPane');
+    const avail = (paneEl && paneEl.clientWidth) ? paneEl.clientWidth - 2 : 800;
+    dw = Math.max(0.5, avail/totalDays);
+  } else {
+    dw = dayWidth;
+  }
+  const totalWidth = totalDays * dw;
+  const today = new Date('2026-06-14T00:00:00');
+  const todayOffset = dayDiff(start,today);
+  const {planPct, actualPct} = computePercents();
+
+  // --- header: months ---
+  const monthsEl = document.getElementById('ganttMonths');
+  monthsEl.style.width = totalWidth+'px';
+  monthsEl.style.position='relative';
+  let monthsHtml='';
+  let segStart=0;
+  for(let i=1;i<=totalDays;i++){
+    const d = addDays(start,i);
+    const prevD = addDays(start,i-1);
+    const isLast = i===totalDays;
+    if(isLast || d.getMonth()!==prevD.getMonth()){
+      const segLen = i-segStart;
+      const label = MONTH_NAMES[prevD.getMonth()] + ' ' + prevD.getFullYear();
+      monthsHtml += `<div class="gmonth" style="left:${segStart*dw}px;width:${segLen*dw}px">${label}</div>`;
+      segStart = i;
+    }
+  }
+  monthsEl.innerHTML = monthsHtml;
+
+  // --- header: days ---
+  const daysEl = document.getElementById('ganttDays');
+  daysEl.style.width = totalWidth+'px';
+  let daysHtml='';
+  for(let i=0;i<totalDays;i++){
+    const d = addDays(start,i);
+    const wknd = (d.getDay()===0 || d.getDay()===6);
+    const isToday = dayDiff(start,d)===todayOffset;
+    let label = d.getDate();
+    const mode = labelMode || (dw < 6 ? 'monthly' : (dw < 10 ? 'weekly' : 'daily'));
+    if(mode==='monthly') label=''; // too narrow / monthly view: month band is enough
+    else if(mode==='weekly' && d.getDay()!==1 && !isToday) label=''; // weekly: show Mondays only
+    daysHtml += `<div class="gday-head ${wknd?'weekend':''} ${isToday?'today':''}" style="width:${dw}px">${label}</div>`;
+  }
+  daysEl.innerHTML = daysHtml;
+
+  // --- body ---
+  const bodyEl = document.getElementById('ganttBody');
+  bodyEl.style.width = totalWidth+'px';
+  const heights = tasks.map((t,i)=> rowHeights[i] || ROW_H);
+  const rowTop = []; // cumulative top offset per task
+  let acc = 0;
+  heights.forEach(h=>{ rowTop.push(acc); acc += h; });
+  bodyEl.style.height = acc+'px';
+
+  let bodyHtml='';
+  // background grid (weekend shading)
+  if(dw >= 4){
+    for(let i=0;i<totalDays;i++){
+      const d = addDays(start,i);
+      const wknd = (d.getDay()===0 || d.getDay()===6);
+      if(wknd){
+        bodyHtml += `<div class="gbg weekend" style="left:${i*dw}px;width:${dw}px"></div>`;
+      }
+    }
+  }
+  // row stripes + mid-divider between Plan/Actual
+  tasks.forEach((t,i)=>{
+    const lvl = Math.min(Math.max(t.level,1),5);
+    const hidden = printLevelVisible[lvl] === false;
+    bodyHtml += `<div class="grow ${hidden?'row-hidden':''}" style="top:${rowTop[i]}px;height:${heights[i]}px"></div>`;
+    bodyHtml += `<div class="grow-mid" style="top:${rowTop[i] + heights[i]/2}px"></div>`;
+  });
+  // today line
+  if(todayOffset>=0 && todayOffset<totalDays){
+    bodyHtml += `<div class="gtoday-line" style="left:${todayOffset*dw}px;height:${acc}px"></div>`;
+  }
+  // bars — each task gets two stacked bars: Plan (top half) and Actual (bottom half)
+  tasks.forEach((t,i)=>{
+    const lvl = Math.min(Math.max(t.level,1),5);
+    const hidden = printLevelVisible[lvl] === false;
+    const hiddenClass = hidden ? 'row-hidden' : '';
+    const half = heights[i]/2;
+    const barPad = Math.max((half-14)/2, 2);
+    const planTop = rowTop[i] + barPad;
+    const actualTop = rowTop[i] + half + barPad;
+    let labelLeft = null, labelTop = planTop;
+    const pPct = planPct[i], aPct = actualPct[i];
+    const delayed = aPct < pPct;
+
+    if(t.planStart && t.planFinish){
+      const offset = dayDiff(start, new Date(t.planStart+'T00:00:00'));
+      const dur = periodDays(t.planStart,t.planFinish) || 1;
+      const left = offset*dw;
+      const width = Math.max(dur*dw, 3);
+
+      bodyHtml += `<div class="gbar-plan level-${lvl} ${hiddenClass}" style="top:${planTop}px;left:${left}px;width:${width}px">`;
+      bodyHtml += `<div class="gbar-fill" style="width:${aPct}%"></div>`;
+      bodyHtml += `<div class="gbar-planmark" style="left:${pPct}%" title="Plan ${pPct}% today"></div>`;
+      bodyHtml += `</div>`;
+      labelLeft = left + width;
+    }
+
+    if(t.actualStart){
+      const aOffset = dayDiff(start, new Date(t.actualStart+'T00:00:00'));
+      let aDur, ongoing=false;
+      if(t.actualFinish){
+        aDur = periodDays(t.actualStart,t.actualFinish) || 1;
+      } else {
+        aDur = Math.max(dayDiff(new Date(t.actualStart+'T00:00:00'), today)+1, 1);
+        ongoing = true;
+      }
+      const aLeft = aOffset*dw;
+      const aWidth = Math.max(aDur*dw, 3);
+      bodyHtml += `<div class="gbar-actual2 ${ongoing?'ongoing':''} ${delayed?'delayed':''} ${hiddenClass}" style="top:${actualTop}px;left:${aLeft}px;width:${aWidth}px"></div>`;
+      labelLeft = labelLeft===null ? (aLeft+aWidth) : Math.max(labelLeft, aLeft+aWidth);
+    }
+
+    if(labelLeft!==null && dw >= 6){
+      const showManpower = colVisible['manpower']!==false && t.manpower;
+      const text = showManpower
+        ? `${escapeHtml(t.manpower)} · ${aPct}%${delayed?' ⚠':''}`
+        : `${aPct}%${delayed?' ⚠':''}`;
+      bodyHtml += `<span class="gbar-label ${delayed?'delayed':''} ${hiddenClass}" style="top:${labelTop}px;left:${labelLeft+6}px">${text}</span>`;
+    }
+  });
+
+  bodyEl.innerHTML = bodyHtml;
+}
+
+/* ============================================================
+   SYNC SCROLL (vertical) between WBS table, Gantt body & extra pane
+   ============================================================ */
+function setupScrollSync(){
+  const panes = [
+    document.getElementById('wbsPane'),
+    document.getElementById('ganttPane'),
+    document.getElementById('extraPane')
+  ];
+  let syncing=false;
+  panes.forEach(p=>{
+    p.addEventListener('scroll', ()=>{
+      if(syncing) return;
+      syncing=true;
+      const top = p.scrollTop;
+      panes.forEach(o=>{ if(o!==p) o.scrollTop = top; });
+      syncing=false;
+    });
+  });
+}
+
+/* ============================================================
+   EXPORT — build data rows shared by CSV / Excel
+   Plan/Actual Start/Finish/Period are expanded into separate
+   flat columns for spreadsheet export.
+   ============================================================ */
+function buildExportRows(){
+  const codes = wbsCodes();
+  const {planPct, actualPct} = computePercents();
+  const header = [];
+  const colKeys = []; // sequence of export field keys
+  allColumns().forEach(c=>{
+    if(c.key==='dateType') return; // not meaningful in flat export
+    if(c.key==='percent'){
+      if(printColVisible[c.key]!==false){ header.push('Plan %'); colKeys.push('planPercent'); header.push('Actual %'); colKeys.push('actualPercent'); }
+      return;
+    }
+    if(c.key==='dateStart'){
+      if(printColVisible[c.key]!==false){ header.push('Plan Start'); colKeys.push('planStart'); header.push('Actual Start'); colKeys.push('actualStart'); }
+      return;
+    }
+    if(c.key==='dateFinish'){
+      if(printColVisible[c.key]!==false){ header.push('Plan Finish'); colKeys.push('planFinish'); header.push('Actual Finish'); colKeys.push('actualFinish'); }
+      return;
+    }
+    if(c.key==='datePeriod'){
+      if(printColVisible[c.key]!==false){ header.push('Plan Period'); colKeys.push('planPeriod'); header.push('Actual Period'); colKeys.push('actualPeriod'); }
+      return;
+    }
+    if(printColVisible[c.key]===false) return;
+    header.push(c.label);
+    colKeys.push(c.key);
+  });
+
+  const rows = [header];
+  tasks.forEach((t,i)=>{
+    const lvl = Math.min(Math.max(t.level,1),5);
+    if(printLevelVisible[lvl] === false) return;
+    const valueFor = (key)=>{
+      switch(key){
+        case 'code': return codes[i];
+        case 'detail': return t.name;
+        case 'manpower': return t.manpower;
+        case 'status': return t.status;
+        case 'rto': return t.rto;
+        case 'note': return t.note;
+        case 'jobNumber': return t.jobNumber;
+        case 'planPercent': return planPct[i];
+        case 'actualPercent': return actualPct[i];
+        case 'planStart': return t.planStart;
+        case 'planFinish': return t.planFinish;
+        case 'planPeriod': return periodDays(t.planStart,t.planFinish);
+        case 'actualStart': return t.actualStart;
+        case 'actualFinish': return t.actualFinish;
+        case 'actualPeriod': return periodDays(t.actualStart,t.actualFinish);
+        default: return (t.extra && t.extra[key]) || '';
+      }
+    };
+    rows.push(colKeys.map(k=>valueFor(k)));
+  });
+  return rows;
+}
+// Filesystem/sheet-name-safe slug derived from the project name
+function fileSlug(){
+  const name = (projectName || 'master-plan').trim();
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  return slug || 'master-plan';
+}
+function exportCsv(){
+  const rows = buildExportRows();
+  const csv = rows.map(r=>r.map(v=>{
+    const s = String(v ?? '');
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  downloadBlob(blob, fileSlug()+'.csv');
+}
+function exportExcel(){
+  const rows = buildExportRows();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  const sheetName = (projectName || 'Master Plan').replace(/[\\/?*\[\]:]/g,' ').slice(0,31) || 'Master Plan';
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.writeFile(wb, fileSlug()+'.xlsx');
+}
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+   PRINT MODAL
+   ============================================================ */
+function openPrintModal(){
+  // build level checkboxes
+  const levelEl = document.getElementById('levelChecks');
+  levelEl.innerHTML = [1,2,3,4,5].map(l=>`
+    <label class="opt"><input type="checkbox" data-level="${l}" ${printLevelVisible[l]!==false?'checked':''}> Level ${l}</label>
+  `).join('');
+  // build column checkboxes
+  const colEl = document.getElementById('colChecks');
+  colEl.innerHTML = allColumns().map(c=>`
+    <label class="opt"><input type="checkbox" data-colkey="${c.key}" ${printColVisible[c.key]!==false?'checked':''}> ${escapeHtml(c.label)}</label>
+  `).join('');
+  document.getElementById('printModal').classList.remove('hidden');
+}
+function readPrintSettings(){
+  document.querySelectorAll('#levelChecks input').forEach(inp=>{
+    printLevelVisible[Number(inp.dataset.level)] = inp.checked;
+  });
+  document.querySelectorAll('#colChecks input').forEach(inp=>{
+    printColVisible[inp.dataset.colkey] = inp.checked;
+  });
+}
+
+// Re-render the current data using the Print/Export settings (column ticks,
+// level visibility, fit-to-width Gantt). Shared by doPrint() and
+// exportPrintHtml(). Returns the print day-width used, for reference.
+function renderForPrint(){
+  readPrintSettings();
+  const scale = document.querySelector('input[name=printScale]:checked').value;
+
+  // re-render with print settings applied
+  renderHeader();
+  renderTable();
+  // ensure body cells reflect print-visibility too (renderTable rebuilds <td>s)
+  applyColumnVisibilityClasses();
+
+  // The Gantt must sit beside the table (not below it) and everything
+  // must fit on one A4-landscape page width. PRINT_TOTAL_WIDTH ≈ usable
+  // width of A4 landscape with small margins (the @page rule below).
+  // If the WBS + extra tables don't fit in the remaining space after
+  // reserving room for the Gantt, shrink them proportionally —
+  // table-layout:fixed will shrink each column to match.
+  const PRINT_TOTAL_WIDTH = 1000;
+  const MIN_GANTT_WIDTH = 220;
+  const mainUnscaled = computeTableWidth('wbsColgroup', true);
+  const extraUnscaled = computeTableWidth('extraColgroup', true);
+  const tablesBudget = PRINT_TOTAL_WIDTH - MIN_GANTT_WIDTH;
+  let mainW = mainUnscaled, extraW = extraUnscaled;
+  if((mainUnscaled + extraUnscaled) > tablesBudget && (mainUnscaled + extraUnscaled) > 0){
+    const tableScale = tablesBudget / (mainUnscaled + extraUnscaled);
+    mainW = mainUnscaled * tableScale;
+    extraW = extraUnscaled * tableScale;
+  }
+  applyTableWidth('wbsTable','wbsColgroup', true, mainW);
+  applyTableWidth('extraTable','extraColgroup', true, extraW);
+  const ganttW = Math.max(MIN_GANTT_WIDTH, PRINT_TOTAL_WIDTH - mainW - extraW);
+
+  const {start,end} = getTimelineBounds();
+  const totalDays = dayDiff(start,end)+1;
+  const printDayWidth = Math.max(0.5, Math.min(60, ganttW/totalDays));
+
+  relayout(printDayWidth, scale);
+  applyColumnVisibilityClasses(); // covers the extra-table body rebuilt by relayout
+  return printDayWidth;
+}
+// Undo renderForPrint() and return to the normal on-screen layout.
+function restoreAfterPrint(){
+  applyTableWidth('wbsTable','wbsColgroup');
+  applyTableWidth('extraTable','extraColgroup');
+  relayout();
+  applyColumnVisibilityClasses();
+}
+
+function doPrint(){
+  renderForPrint();
+  document.getElementById('printModal').classList.add('hidden');
+  window.addEventListener('afterprint', restoreAfterPrint, {once:true});
+  setTimeout(()=>{ window.print(); }, 80);
+}
+
+// Download a standalone HTML snapshot of the current print view — works
+// like Export Excel/CSV (a real file save), for when window.print()
+// can't open a dialog inside the preview sandbox. Open the downloaded
+// file in a browser tab and use Ctrl+P / "Save as PDF" there.
+function exportPrintHtml(){
+  renderForPrint();
+
+  const styleHtml = document.querySelector('style').outerHTML;
+  const titleHtml = `<h1>Master Plan${projectName ? ` <span class="project-name-display">${escapeHtml(projectName)}</span>` : ''} <span class="sub">Project Schedule &amp; Gantt</span></h1>`;
+  const statsHtml = document.getElementById('stats').outerHTML;
+  const splitHtml = document.querySelector('.split').outerHTML;
+
+  // Force the print layout on (so the snapshot looks right even on
+  // screen) and make sure col-hide (on-screen-only hide) doesn't
+  // suppress columns that were ticked for print.
+  const overrideStyle = `<style>
+    @page{ size: A4 landscape; margin: 8mm; }
+    *{
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+    body{margin:18px;font-family:'IBM Plex Sans',sans-serif;background:#fff;}
+    .topbar{display:block;margin-bottom:10px;}
+    .split{height:auto;overflow:visible;display:flex;flex-wrap:nowrap;align-items:flex-start;}
+    .pane{overflow:visible;height:auto;}
+    .wbs-pane{border-right:none;max-width:none;flex:0 0 auto;}
+    .gantt-pane{flex:0 0 auto;min-width:0;margin-top:0;}
+    .extra-pane{flex:0 0 auto;max-width:none;}
+    .print-hide{display:none!important;}
+    .col-hide{display:revert!important;}
+    table.wbs thead th, .gantt-head{position:static;}
+    input,select,textarea{pointer-events:none;}
+    .project-name-display{font-weight:700;}
+  </style>`;
+
+  const pageTitle = projectName ? `${projectName} — Master Plan` : 'Master Plan — Print View';
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>${escapeHtml(pageTitle)}</title>
+${styleHtml}
+${overrideStyle}
+</head>
+<body>
+<div class="topbar">${titleHtml}${statsHtml}</div>
+${splitHtml}
+</body>
+</html>`;
+
+  const blob = new Blob([html], {type:'text/html;charset=utf-8;'});
+  downloadBlob(blob, fileSlug()+'-print.html');
+
+  restoreAfterPrint();
+}
+
+/* ============================================================
+   COLUMNS MODAL
+   ============================================================ */
+function renderOrderList(containerId, getOrder, setOrder){
+  const el = document.getElementById(containerId);
+  const order = getOrder();
+  el.innerHTML = order.map((key,idx)=>`
+    <div class="custom-col-row">
+      <span>${escapeHtml(colLabel(key))}</span>
+      <span>
+        <button class="move-btn" data-move="up" data-key="${key}" ${idx===0?'disabled':''} title="Move left">◀</button>
+        <button class="move-btn" data-move="down" data-key="${key}" ${idx===order.length-1?'disabled':''} title="Move right">▶</button>
+      </span>
+    </div>
+  `).join('');
+  el.querySelectorAll('[data-move]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      const key = e.currentTarget.dataset.key;
+      const dir = e.currentTarget.dataset.move==='up' ? -1 : 1;
+      const newOrder = moveInOrder(getOrder(), key, dir);
+      setOrder(newOrder);
+      saveTasks();
+      renderAll();
+      renderOrderList(containerId, getOrder, setOrder);
+    });
+  });
+}
+function renderColumnVisibilityChecks(){
+  const el = document.getElementById('colVisibilityChecks');
+  el.innerHTML = allColumns().map(c=>`
+    <label class="opt"><input type="checkbox" data-viscol="${c.key}" ${colVisible[c.key]!==false?'checked':''}> ${escapeHtml(c.label)}</label>
+  `).join('');
+  el.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('change', e=>{
+      colVisible[e.target.dataset.viscol] = e.target.checked;
+      saveTasks();
+      applyColumnVisibilityClasses();
+      applyTableWidth('wbsTable','wbsColgroup');
+      applyTableWidth('extraTable','extraColgroup');
+      renderGantt();
+    });
+  });
+}
+function renderCustomColList(){
+  const list = document.getElementById('customColList');
+  if(!customColumns.length){
+    list.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:6px 0;">No custom columns yet.</div>';
+    return;
+  }
+  list.innerHTML = customColumns.map(c=>`
+    <div class="custom-col-row">
+      <span>${escapeHtml(c.label)}</span>
+      <button data-removecol="${c.id}" title="Remove column">✕</button>
+    </div>
+  `).join('');
+  list.querySelectorAll('[data-removecol]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      const id = e.currentTarget.dataset.removecol;
+      if(confirm('Remove this column? Data in this column will be lost.')){
+        customColumns = customColumns.filter(c=>c.id!==id);
+        tasks.forEach(t=>{ if(t.extra) delete t.extra[id]; });
+        delete printColVisible[id];
+        delete colVisible[id];
+        saveTasks();
+        renderAll();
+        renderCustomColList();
+        renderColumnVisibilityChecks();
+      }
+    });
+  });
+}
+
+/* ============================================================
+   WORKLOAD MODAL — group tasks by Manpower text and total up
+   the planned duration of each task assigned to that person/team.
+   ============================================================ */
+// If the Manpower text names an individual (e.g. "Engineer A", "PM: Somchai")
+// there's 1 person. If it describes a crew with a count ("4 staff",
+// "Drafting team x2", "Install team x8"), pull that number out instead.
+function parseHeadcount(label){
+  const m = String(label||'').match(/(\d+)/);
+  return m ? Math.max(1, parseInt(m[1],10)) : 1;
+}
+// "Engineer A, Engineer B" / "Somchai & Somsri" -> ["Engineer A","Engineer B"]
+// so each named person's workload is tracked under their own name, even if
+// they're also listed together with others on some tasks.
+function splitManpowerNames(label){
+  return String(label||'')
+    .split(/\s*[,;\/&]\s*|\s+and\s+/i)
+    .map(s=>s.trim())
+    .filter(Boolean);
+}
+function computeWorkload(){
+  const map = {};
+  const {actualPct} = computePercents();
+  tasks.forEach((t,i)=>{
+    const raw = String(t.manpower||'').trim();
+    if(!raw) return;
+    const names = splitManpowerNames(raw);
+    const multiNamed = names.length > 1;
+    const days = periodDays(t.planStart,t.planFinish) || 0;
+    names.forEach(name=>{
+      if(!map[name]) map[name] = {tasks:[], totalDays:0, minStart:null, maxFinish:null, headcount: multiNamed ? 1 : parseHeadcount(name)};
+      const entry = map[name];
+      entry.tasks.push({name:t.name, days, status:t.status, pct:actualPct[i], planStart:t.planStart||''});
+      entry.totalDays += days;
+      if(t.planStart && (!entry.minStart || t.planStart < entry.minStart)) entry.minStart = t.planStart;
+      if(t.planFinish && (!entry.maxFinish || t.planFinish > entry.maxFinish)) entry.maxFinish = t.planFinish;
+    });
+  });
+  // sort each person/crew's task list chronologically by Plan Start
+  Object.values(map).forEach(entry=>{
+    entry.tasks.sort((a,b)=>{
+      if(!a.planStart && !b.planStart) return 0;
+      if(!a.planStart) return 1;  // no date -> last
+      if(!b.planStart) return -1;
+      return a.planStart < b.planStart ? -1 : (a.planStart > b.planStart ? 1 : 0);
+    });
+  });
+  return map;
+}
+function renderWorkload(){
+  const map = computeWorkload();
+  const names = Object.keys(map).sort((a,b)=> map[b].totalDays - map[a].totalDays);
+  const el = document.getElementById('workloadContent');
+  if(!names.length){
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:10px 0;">No Manpower assigned to any task yet.</div>';
+    return;
+  }
+  const maxDays = Math.max(...names.map(n=>map[n].totalDays), 1);
+  let html = '<table class="wbs" style="width:100%;table-layout:auto;font-size:12px;">';
+  html += '<thead><tr><th style="height:32px">Manpower</th><th style="height:32px">Headcount</th><th style="height:32px">Tasks (by start date)</th><th style="height:32px">Total Plan Days</th><th style="height:32px">Plan Date Range</th><th style="height:32px">Load</th></tr></thead><tbody>';
+  names.forEach(name=>{
+    const e = map[name];
+    const range = (e.minStart && e.maxFinish) ? `${e.minStart} → ${e.maxFinish}` : '—';
+    const barPct = Math.round((e.totalDays/maxDays)*100);
+    const taskList = e.tasks.map(x=>`${x.planStart||'—'} · ${escapeHtml(x.name)} (${x.days||0}d, ${x.pct}%)`).join('<br>');
+    html += `<tr>
+      <td style="height:auto;white-space:normal;font-weight:600;vertical-align:top;padding:6px;">${escapeHtml(name)}</td>
+      <td style="height:auto;vertical-align:top;padding:6px;text-align:center;font-family:'IBM Plex Mono',monospace;">${e.headcount}</td>
+      <td style="height:auto;white-space:normal;vertical-align:top;padding:6px;color:var(--muted);font-size:11px;">${taskList}</td>
+      <td style="height:auto;vertical-align:top;padding:6px;font-family:'IBM Plex Mono',monospace;text-align:center;">${e.totalDays}</td>
+      <td style="height:auto;vertical-align:top;padding:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;">${range}</td>
+      <td style="height:auto;vertical-align:top;padding:6px;">
+        <div style="background:#eef2f4;border-radius:3px;overflow:hidden;height:10px;">
+          <div style="background:var(--l2);height:100%;width:${barPct}%;"></div>
+        </div>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+document.getElementById('workloadBtn').addEventListener('click', ()=>{
+  renderWorkload();
+  document.getElementById('workloadModal').classList.remove('hidden');
+});
+document.getElementById('closeWorkloadBtn').addEventListener('click', ()=>{
+  document.getElementById('workloadModal').classList.add('hidden');
+});
+document.getElementById('historyBtn').addEventListener('click', ()=>{
+  renderHistoryList();
+  document.getElementById('historyModal').classList.remove('hidden');
+});
+document.getElementById('closeHistoryBtn').addEventListener('click', ()=>{
+  document.getElementById('historyModal').classList.add('hidden');
+});
+document.getElementById('snapshotNowBtn').addEventListener('click', async ()=>{
+  await pushHistorySnapshot('Manual snapshot');
+  renderHistoryList();
+});
+
+/* ============================================================
+   DASHBOARD (MD / PM view)
+   ============================================================ */
+// Tasks that are behind schedule today: Plan dates have started,
+// Actual% hasn't reached 100%, and Actual% < Plan% (the time-based
+// "should be done by now" figure).
+function computeDelayedTasks(){
+  const {planPct, actualPct} = computePercents();
+  const codes = wbsCodes();
+  const today = new Date('2026-06-14T00:00:00');
+  const rows = [];
+  tasks.forEach((t,i)=>{
+    if(!t.planStart) return;
+    if(new Date(t.planStart+'T00:00:00') > today) return;
+    if(actualPct[i] >= 100) return;
+    const gap = planPct[i] - actualPct[i];
+    if(gap > 0){
+      rows.push({code:codes[i], name:t.name, level:Math.min(Math.max(t.level,1),5),
+        plan:planPct[i], actual:actualPct[i], gap, status:t.status});
+    }
+  });
+  rows.sort((a,b)=> b.gap - a.gap);
+  return rows;
+}
+// Walk up the WBS hierarchy from task i, returning the indices of its
+// parent, grandparent, etc. (nearest preceding task at each higher level).
+function getAncestors(i){
+  const ancestors = [];
+  const lvl = Math.min(Math.max(tasks[i].level,1),5);
+  for(let target=lvl-1; target>=1; target--){
+    for(let j=i-1; j>=0; j--){
+      const jl = Math.min(Math.max(tasks[j].level,1),5);
+      if(jl===target){ ancestors.push(j); break; }
+    }
+  }
+  return ancestors;
+}
+// Tasks starting within the next 7 days where neither the task itself
+// nor any of its parent items have an RTO/PO number recorded — a sign
+// materials may not have been ordered ("in stock") in time.
+const RTO_ALERT_HORIZON_DAYS = 7;
+function computeRtoAlerts(){
+  const codes = wbsCodes();
+  const today = new Date('2026-06-14T00:00:00');
+  const horizon = addDays(today, RTO_ALERT_HORIZON_DAYS);
+  const {actualPct} = computePercents();
+  const rows = [];
+  tasks.forEach((t,i)=>{
+    if(!t.planStart) return;
+    if(actualPct[i] >= 100) return;
+    const ps = new Date(t.planStart+'T00:00:00');
+    if(ps < today || ps > horizon) return;
+    const hasOwnRto = String(t.rto||'').trim()!=='';
+    if(hasOwnRto) return;
+    const ancestors = getAncestors(i);
+    const hasAncestorRto = ancestors.some(j=> String(tasks[j].rto||'').trim()!=='');
+    if(hasAncestorRto) return;
+    rows.push({code:codes[i], name:t.name, planStart:t.planStart, level:Math.min(Math.max(t.level,1),5)});
+  });
+  rows.sort((a,b)=> a.planStart < b.planStart ? -1 : (a.planStart > b.planStart ? 1 : 0));
+  return rows;
+}
+function renderDashboard(){
+  const {planPct, actualPct} = computePercents();
+  const topLevelIdx = tasks.map((t,i)=>i).filter(i=>tasks[i].level===1);
+  const idxSource = topLevelIdx.length ? topLevelIdx : tasks.map((t,i)=>i);
+  const avgActual = idxSource.length ? Math.round(idxSource.reduce((s,i)=>s+actualPct[i],0)/idxSource.length) : 0;
+  const avgPlan = idxSource.length ? Math.round(idxSource.reduce((s,i)=>s+planPct[i],0)/idxSource.length) : 0;
+  const delayedRows = computeDelayedTasks();
+  const rtoAlerts = computeRtoAlerts();
+  const workloadMap = computeWorkload();
+  const names = Object.keys(workloadMap).sort((a,b)=> workloadMap[b].totalDays - workloadMap[a].totalDays);
+  const today = new Date('2026-06-14T00:00:00');
+  const overdue = tasks.filter((t,i)=>{
+    if(!t.planFinish || actualPct[i]>=100) return false;
+    return new Date(t.planFinish+'T00:00:00') < today;
+  }).length;
+
+  let html = '';
+  html += `<div class="dash-header">
+    <h2>${escapeHtml(projectName || 'Master Plan')}</h2>
+    <div class="dash-sub">${projectStart||'—'} → ${projectFinish||'—'} · as of 2026-06-14</div>
+  </div>`;
+
+  html += `<div class="dash-cards">
+    <div class="dash-card"><div class="dash-num">${tasks.length}</div><div class="dash-label">Total Tasks</div></div>
+    <div class="dash-card"><div class="dash-num">${avgPlan}%</div><div class="dash-label">Plan Progress</div></div>
+    <div class="dash-card"><div class="dash-num">${avgActual}%</div><div class="dash-label">Actual Progress</div></div>
+    <div class="dash-card ${delayedRows.length?'warn':''}"><div class="dash-num">${delayedRows.length}</div><div class="dash-label">Delayed Tasks</div></div>
+    <div class="dash-card ${overdue?'warn':''}"><div class="dash-num">${overdue}</div><div class="dash-label">Overdue (Past Finish)</div></div>
+    <div class="dash-card ${rtoAlerts.length?'warn':''}"><div class="dash-num">${rtoAlerts.length}</div><div class="dash-label">Starting Soon, No RTO</div></div>
+  </div>`;
+
+  html += `<div class="dash-section">
+    <h3>Overall Progress (Level 1)</h3>
+    <div class="dash-progress"><div class="dash-progress-label">Plan</div><div class="dash-bar"><div class="dash-bar-fill plan" style="width:${avgPlan}%"></div></div><div class="dash-progress-val">${avgPlan}%</div></div>
+    <div class="dash-progress"><div class="dash-progress-label">Actual</div><div class="dash-bar"><div class="dash-bar-fill actual" style="width:${avgActual}%"></div></div><div class="dash-progress-val">${avgActual}%</div></div>
+  </div>`;
+
+  html += `<div class="dash-section"><h3>Delayed Tasks (${delayedRows.length})</h3>`;
+  if(!delayedRows.length){
+    html += `<div class="dash-empty">No delayed tasks — everything is on schedule. 🎉</div>`;
+  } else {
+    html += `<table class="dash-table"><thead><tr>
+      <th>No.</th><th>Task</th><th>Plan %</th><th>Actual %</th><th>Behind by</th><th>Status</th>
+    </tr></thead><tbody>`;
+    delayedRows.forEach(r=>{
+      html += `<tr>
+        <td style="font-family:'IBM Plex Mono',monospace;">${r.code}</td>
+        <td style="white-space:normal;">${escapeHtml(r.name)}</td>
+        <td style="text-align:center;">${r.plan}%</td>
+        <td style="text-align:center;color:var(--red);font-weight:600;">${r.actual}%</td>
+        <td style="text-align:center;color:var(--red);font-weight:600;">-${r.gap}%</td>
+        <td>${escapeHtml(r.status||'')}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+  html += `</div>`;
+
+  html += `<div class="dash-section"><h3>Starting Soon, No RTO/PO Recorded (next ${RTO_ALERT_HORIZON_DAYS} days)</h3>`;
+  if(!rtoAlerts.length){
+    html += `<div class="dash-empty">All tasks starting soon have an RTO/PO number recorded (on the task itself or a parent item). ✅</div>`;
+  } else {
+    html += `<table class="dash-table"><thead><tr><th>No.</th><th>Task</th><th>Plan Start</th></tr></thead><tbody>`;
+    rtoAlerts.forEach(r=>{
+      html += `<tr>
+        <td style="font-family:'IBM Plex Mono',monospace;">${r.code}</td>
+        <td style="white-space:normal;">${escapeHtml(r.name)}</td>
+        <td style="text-align:center;font-family:'IBM Plex Mono',monospace;color:var(--red);font-weight:600;">${r.planStart}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+  html += `</div>`;
+
+  html += `<div class="dash-section"><h3>Workload by Manpower</h3>`;
+  if(!names.length){
+    html += `<div class="dash-empty">No Manpower assigned to any task yet.</div>`;
+  } else {
+    const maxDays = Math.max(...names.map(n=>workloadMap[n].totalDays), 1);
+    html += `<table class="dash-table"><thead><tr><th>Manpower</th><th>Headcount</th><th>Tasks (by start date)</th><th>Total Plan Days</th><th>Plan Date Range</th><th>Load</th></tr></thead><tbody>`;
+    names.forEach(name=>{
+      const e = workloadMap[name];
+      const range = (e.minStart && e.maxFinish) ? `${e.minStart} → ${e.maxFinish}` : '—';
+      const barPct = Math.round((e.totalDays/maxDays)*100);
+      const taskList = e.tasks.map(x=>`${x.planStart||'—'} · ${escapeHtml(x.name)} (${x.days||0}d, ${x.pct}%)`).join('<br>');
+      html += `<tr>
+        <td style="font-weight:600;vertical-align:top;">${escapeHtml(name)}</td>
+        <td style="text-align:center;font-family:'IBM Plex Mono',monospace;vertical-align:top;">${e.headcount}</td>
+        <td style="white-space:normal;color:var(--muted);font-size:11px;vertical-align:top;">${taskList}</td>
+        <td style="text-align:center;font-family:'IBM Plex Mono',monospace;vertical-align:top;">${e.totalDays}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;vertical-align:top;">${range}</td>
+        <td style="vertical-align:top;"><div style="background:#eef2f4;border-radius:3px;overflow:hidden;height:10px;"><div style="background:var(--l2);height:100%;width:${barPct}%;"></div></div></td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+  html += `</div>`;
+
+  html += `<div class="dash-section"><h3>Project Baseline Changes (Start/Finish edits)</h3>`;
+  if(!projectDateLog.length){
+    html += `<div class="dash-empty">No changes recorded yet — edits to Project Start/Finish at the top of the screen will be logged here.</div>`;
+  } else {
+    const logRows = projectDateLog.slice().reverse();
+    html += `<table class="dash-table"><thead><tr><th>When</th><th>Field</th><th>From</th><th>To</th></tr></thead><tbody>`;
+    logRows.forEach(r=>{
+      html += `<tr>
+        <td style="font-family:'IBM Plex Mono',monospace;white-space:nowrap;">${formatHistoryTime(r.time)}</td>
+        <td>${r.field==='projectStart' ? 'Project Start' : 'Project Finish'}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;">${r.from || '—'}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;font-weight:600;">${r.to || '—'}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+  html += `</div>`;
+
+  document.getElementById('dashboardView').innerHTML = html;
+}
+
+/* ============================================================
+   ROLES (access code) + VIEW SWITCHING (Plan/Gantt vs Dashboard)
+   ============================================================ */
+function applyRole(role){
+  currentRole = role;
+  // NOTE: editing is intentionally NOT restricted for any role right now
+  // (per request — proper access control comes later with the database
+  // phase). The access code currently only controls the Dashboard tab.
+  document.getElementById('dashboardTabBtn').style.display = (role==='executive') ? '' : 'none';
+  if(role!=='executive' && currentView==='dashboard') switchView('plan');
+  const badge = document.getElementById('roleBadge');
+  badge.textContent = ROLE_LABELS[role] || role;
+  badge.className = 'role-badge role-'+role;
+}
+function switchView(view){
+  if(view==='dashboard' && currentRole!=='executive') view='plan';
+  currentView = view;
+  document.querySelectorAll('.view-tab').forEach(b=> b.classList.toggle('active', b.dataset.view===view));
+  document.querySelector('.split').style.display = (view==='plan') ? 'flex' : 'none';
+  document.getElementById('dashboardView').style.display = (view==='dashboard') ? 'block' : 'none';
+  document.querySelectorAll('.toolbar').forEach(el=> el.style.display = (view==='plan') ? '' : 'none');
+  if(view==='dashboard') renderDashboard();
+}
+document.querySelectorAll('.view-tab').forEach(b=>{
+  b.addEventListener('click', ()=> switchView(b.dataset.view));
+});
+function showLogin(){
+  document.getElementById('loginPassword').value='';
+  document.getElementById('loginError').style.display='none';
+  document.getElementById('loginOverlay').classList.remove('hidden');
+  document.getElementById('loginPassword').focus();
+}
+function attemptLogin(){
+  const pw = document.getElementById('loginPassword').value.trim();
+  if(!pw){
+    applyRole('viewer');
+    document.getElementById('loginOverlay').classList.add('hidden');
+    return;
+  }
+  const role = ROLE_PASSWORDS[pw];
+  if(role){
+    applyRole(role);
+    document.getElementById('loginOverlay').classList.add('hidden');
+  } else {
+    document.getElementById('loginError').style.display='block';
+  }
+}
+document.getElementById('loginSubmitBtn').addEventListener('click', attemptLogin);
+document.getElementById('loginPassword').addEventListener('keydown', e=>{
+  if(e.key==='Enter') attemptLogin();
+});
+document.getElementById('loginSkipBtn').addEventListener('click', ()=>{
+  applyRole('viewer');
+  document.getElementById('loginOverlay').classList.add('hidden');
+});
+document.getElementById('logoutBtn').addEventListener('click', showLogin);
+
+/* ============================================================
+   AUTO-GROW DETAIL TEXTAREA + ROW HEIGHT RELAYOUT
+   When DETAIL wraps to multiple lines, the task's row grows.
+   This recomputes per-task row heights and re-renders the
+   Gantt chart and the extra (Job No./RTO/Note) pane to match.
+   ============================================================ */
+function autoGrowTextarea(el){
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+function relayout(activeDayWidth, labelMode){
+  rowHeights = tasks.map((t,i)=>{
+    const ta = document.querySelector(`.detail-input[data-idx="${i}"]`);
+    const td = ta ? ta.closest('td') : null;
+    const h = td ? td.offsetHeight : ROW_H;
+    return Math.max(ROW_H, h);
+  });
+  renderExtraTable();
+  renderGantt(activeDayWidth, labelMode);
+}
+
+/* ============================================================
+   MAIN RENDER + EVENTS
+   ============================================================ */
+function renderAll(){
+  renderStats();
+  renderHeader();
+  renderTable();
+  relayout();
+  // renderTable()/renderExtraTable() rebuild <td> elements that don't yet
+  // carry the col-hide/print-hide classes set during renderHeader — re-apply
+  // them now so hidden columns stay hidden in the body too.
+  applyColumnVisibilityClasses();
+  checkProjectRange();
+}
+
+document.getElementById('addBtn').addEventListener('click', ()=>{
+  const level = Number(document.getElementById('newLevel').value);
+  const nameInput = document.getElementById('newName');
+  const name = nameInput.value.trim() || `New Task (Level ${level})`;
+  const today = '2026-06-14';
+  tasks.push(mk(level, name, today, today, 0, '', '', '', 'Not Started', '', ''));
+  nameInput.value='';
+  saveTasks();
+  renderAll();
+  const pane = document.getElementById('wbsPane');
+  setTimeout(()=>{ pane.scrollTop = pane.scrollHeight; },0);
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm('Load sample data? This will replace all current data.')){
+    pushHistorySnapshot('Before Load Sample');
+    seedData();
+    customColumns = [];
+    printColVisible = {};
+    printLevelVisible = {1:true,2:true,3:true,4:true,5:true};
+    colVisible = {};
+    rangeMode = 'auto';
+    customRangeStart = '';
+    customRangeEnd = '';
+    extraMonthsStart = 0;
+    extraMonthsEnd = 0;
+    document.getElementById('rangeMode').value = 'auto';
+    document.getElementById('customRangeGroup').style.display = 'none';
+    document.getElementById('projectNameInput').value = projectName;
+    document.getElementById('projectStartInput').value = projectStart;
+    document.getElementById('projectFinishInput').value = projectFinish;
+    updateDocumentTitle();
+    saveTasks();
+    renderAll();
+  }
+});
+
+/* ---- Columns modal ---- */
+document.getElementById('columnsBtn').addEventListener('click', ()=>{
+  renderOrderList('mainOrderList', getMainOrder, (arr)=>{ mainColumnOrder = arr; });
+  renderOrderList('extraOrderList', getExtraOrder, (arr)=>{ extraColumnOrder = arr; });
+  renderColumnVisibilityChecks();
+  renderCustomColList();
+  document.getElementById('columnsModal').classList.remove('hidden');
+});
+document.getElementById('closeColumnsBtn').addEventListener('click', ()=>{
+  document.getElementById('columnsModal').classList.add('hidden');
+});
+document.getElementById('addColBtn').addEventListener('click', ()=>{
+  const input = document.getElementById('newColName');
+  const label = input.value.trim();
+  if(!label) return;
+  const id = 'x' + Math.random().toString(36).slice(2,8);
+  customColumns.push({id, label});
+  input.value='';
+  saveTasks();
+  renderAll();
+  renderCustomColList();
+  renderColumnVisibilityChecks();
+});
+
+/* ---- Print modal ---- */
+document.getElementById('printBtn').addEventListener('click', openPrintModal);
+document.getElementById('closePrintBtn').addEventListener('click', ()=>{
+  document.getElementById('printModal').classList.add('hidden');
+});
+document.getElementById('exportCsvBtn').addEventListener('click', ()=>{
+  readPrintSettings();
+  exportCsv();
+});
+document.getElementById('exportExcelBtn').addEventListener('click', ()=>{
+  readPrintSettings();
+  exportExcel();
+});
+document.getElementById('doPrintBtn').addEventListener('click', doPrint);
+document.getElementById('exportPrintHtmlBtn').addEventListener('click', exportPrintHtml);
+
+/* ---- Gantt view range ---- */
+document.getElementById('rangeMode').addEventListener('change', (e)=>{
+  rangeMode = e.target.value;
+  document.getElementById('customRangeGroup').style.display = (rangeMode==='custom') ? 'flex' : 'none';
+  saveTasks();
+  renderGantt();
+});
+document.getElementById('customStart').addEventListener('change', (e)=>{
+  customRangeStart = e.target.value;
+  saveTasks();
+  renderGantt();
+});
+document.getElementById('customEnd').addEventListener('change', (e)=>{
+  customRangeEnd = e.target.value;
+  saveTasks();
+  renderGantt();
+});
+
+/* ---- Timeline extend buttons ---- */
+document.getElementById('startPlus').addEventListener('click', ()=>{
+  extraMonthsStart++; saveTasks(); renderGantt();
+});
+document.getElementById('startMinus').addEventListener('click', ()=>{
+  extraMonthsStart = Math.max(0, extraMonthsStart-1); saveTasks(); renderGantt();
+});
+document.getElementById('endPlus').addEventListener('click', ()=>{
+  extraMonthsEnd++; saveTasks(); renderGantt();
+});
+document.getElementById('endMinus').addEventListener('click', ()=>{
+  extraMonthsEnd = Math.max(0, extraMonthsEnd-1); saveTasks(); renderGantt();
+});
+
+/* ---- Zoom (Gantt width: Fit / Day / Normal / Wide) ---- */
+document.querySelectorAll('.zoom-group button[data-zoom]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.zoom-group button[data-zoom]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    if(btn.dataset.zoom === 'fit'){
+      ganttFitMode = true;
+    } else {
+      ganttFitMode = false;
+      dayWidth = Number(btn.dataset.zoom);
+    }
+    saveTasks();
+    renderGantt();
+  });
+});
+
+// In Fit mode, re-fit the Gantt chart whenever the window/pane is resized
+let resizeTimer=null;
+window.addEventListener('resize', ()=>{
+  if(!ganttFitMode) return;
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(()=>renderGantt(), 120);
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+(async function init(){
+  await loadTasks();
+  // Access codes / roles are disabled for now (password gate removed) —
+  // everyone gets full access, including the Dashboard tab.
+  applyRole('executive');
+  // restore UI controls from loaded state
+  document.querySelectorAll('.zoom-group button[data-zoom]').forEach(b=>{
+    const isFit = b.dataset.zoom === 'fit';
+    b.classList.toggle('active', ganttFitMode ? isFit : (!isFit && Number(b.dataset.zoom)===dayWidth));
+  });
+  document.getElementById('rangeMode').value = rangeMode;
+  document.getElementById('customRangeGroup').style.display = (rangeMode==='custom') ? 'flex' : 'none';
+  if(customRangeStart) document.getElementById('customStart').value = customRangeStart;
+  if(customRangeEnd) document.getElementById('customEnd').value = customRangeEnd;
+
+  const projInput = document.getElementById('projectNameInput');
+  projInput.value = projectName;
+  updateDocumentTitle();
+  projInput.addEventListener('input', ()=>{
+    projectName = projInput.value;
+    updateDocumentTitle();
+    saveTasks();
+  });
+
+  const startInput = document.getElementById('projectStartInput');
+  const finishInput = document.getElementById('projectFinishInput');
+  startInput.value = projectStart;
+  finishInput.value = projectFinish;
+  startInput.addEventListener('change', ()=>{
+    logProjectDateChange('projectStart', projectStart, startInput.value);
+    projectStart = startInput.value;
+    saveTasks();
+    renderAll();
+  });
+  finishInput.addEventListener('change', ()=>{
+    logProjectDateChange('projectFinish', projectFinish, finishInput.value);
+    projectFinish = finishInput.value;
+    saveTasks();
+    renderAll();
+  });
+
+  renderAll();
+  setupScrollSync();
+})();
+function updateDocumentTitle(){
+  document.title = projectName ? `Master Plan – ${projectName}` : 'Master Plan';
+}
+// Flag the Project Start/Finish inputs if any task's Plan dates fall
+// outside the overall project window.
+function checkProjectRange(){
+  const startInput = document.getElementById('projectStartInput');
+  const finishInput = document.getElementById('projectFinishInput');
+  let outOfRange = 0;
+  if(projectStart || projectFinish){
+    const min = projectStart ? new Date(projectStart+'T00:00:00') : null;
+    const max = projectFinish ? new Date(projectFinish+'T00:00:00') : null;
+    tasks.forEach(t=>{
+      [t.planStart, t.planFinish].forEach(d=>{
+        if(!d) return;
+        const dd = new Date(d+'T00:00:00');
+        if((min && dd<min) || (max && dd>max)) outOfRange++;
+      });
+    });
+  }
+  startInput.classList.toggle('out-of-range', outOfRange>0);
+  finishInput.classList.toggle('out-of-range', outOfRange>0);
+  startInput.title = finishInput.title = outOfRange>0
+    ? `${outOfRange} plan date(s) fall outside the project window`
+    : '';
+  return outOfRange;
+}
+// Record an edit to the overall Project Start/Finish window so there's a
+// traceable history of baseline changes (shown on the Dashboard).
+function logProjectDateChange(field, from, to){
+  if((from||'') === (to||'')) return; // no actual change
+  projectDateLog.push({time: Date.now(), field, from: from||'', to: to||''});
+  if(projectDateLog.length > 50) projectDateLog = projectDateLog.slice(-50);
+}
+</script>
+</body>
+</html>
